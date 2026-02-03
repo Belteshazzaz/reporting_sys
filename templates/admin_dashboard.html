@@ -1,0 +1,171 @@
+{% extends "base.html" %} {% block title %}Admin Portal | User Management{%
+endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Admin Portal – User Management</h3>
+    <a href="{{ url_for('register') }}" class="btn btn-sm btn-success">
+      <i class="bi bi-person-plus"></i> Create New User
+    </a>
+  </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div
+    class="alert alert-{{ 'warning' if category == 'warning' else category }}"
+  >
+    {{ message | safe }}
+  </div>
+  {% endfor %} {% endif %} {% endwith %}
+
+  <form method="GET" class="row g-2 mb-3">
+    <div class="col-md-4">
+      <input
+        type="text"
+        name="search"
+        class="form-control"
+        placeholder="Search name or email"
+      />
+    </div>
+
+    <div class="col-md-3">
+      <select name="role" class="form-select">
+        <option value="">All Roles</option>
+        <option value="1">Agent</option>
+        <option value="2">Supervisor</option>
+        <option value="3">Director</option>
+        <option value="4">EVC</option>
+        <option value="9">Admin</option>
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <button class="btn btn-primary w-100">Filter</button>
+    </div>
+  </form>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive admin-table-wrapper">
+        <table class="table table-hover table-striped mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Status</th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Current Role</th>
+              <th>Change Role</th>
+              <th>Security</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <!-- Status -->
+              <td>
+                {% if user.is_enabled %}
+                <span class="badge bg-success">Active</span>
+                {% else %}
+                <span class="badge bg-danger">Suspended</span>
+                {% endif %}
+              </td>
+
+              <td>{{ user.id }}</td>
+              <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
+
+              <!-- Role Display -->
+              <td>
+                {% if user.role == 9 %}
+                <span class="badge bg-success">Admin</span> {% elif user.role ==
+                4 %} <span class="badge bg-dark">EVC</span> {% elif user.role ==
+                3 %} <span class="badge bg-primary">Director</span> {% elif
+                user.role == 2 %}
+                <span class="badge bg-info text-dark">Supervisor</span> {% else
+                %}
+                <span class="badge bg-secondary">Agent</span>
+                {% endif %}
+              </td>
+
+              <!-- Role Management -->
+              <td>
+                <div
+                  class="d-grid"
+                  style="grid-template-columns: repeat(3, auto); gap: 4px"
+                >
+                  <a
+                    href="{{ url_for('elevate_user', user_id=user.id, new_role=1) }}"
+                    class="btn btn-sm btn-outline-secondary"
+                    >Agent</a
+                  >
+
+                  <a
+                    href="{{ url_for('elevate_user', user_id=user.id, new_role=2) }}"
+                    class="btn btn-sm btn-outline-info"
+                    >Supervisor</a
+                  >
+
+                  <a
+                    href="{{ url_for('elevate_user', user_id=user.id, new_role=3) }}"
+                    class="btn btn-sm btn-outline-primary"
+                    >Director</a
+                  >
+
+                  <a
+                    href="{{ url_for('elevate_user', user_id=user.id, new_role=4) }}"
+                    class="btn btn-sm btn-outline-dark"
+                    >EVC</a
+                  >
+
+                  <a
+                    href="{{ url_for('elevate_user', user_id=user.id, new_role=9) }}"
+                    class="btn btn-sm btn-outline-success fw-bold"
+                    >Admin</a
+                  >
+                </div>
+              </td>
+
+              <!-- Security -->
+              <td>
+                <div class="d-flex flex-column gap-1">
+                  <!-- Reset password -->
+                  <form
+                    method="POST"
+                    action="{{ url_for('reset_password', user_id=user.id) }}"
+                  >
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-outline-danger"
+                      onclick="return confirm('Reset password for {{ user.name }}?');"
+                    >
+                      <i class="bi bi-key"></i> Reset
+                    </button>
+                  </form>
+
+                  <!-- Suspend / Reactivate -->
+                  <form
+                    method="POST"
+                    action="{{ url_for('toggle_user_status', user_id=user.id) }}"
+                  >
+                    <button
+                      type="submit"
+                      class="btn btn-sm {% if user.is_enabled %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                      onclick="return confirm('Change account status for {{ user.name }}?');"
+                    >
+                      {% if user.is_enabled %}
+                      <i class="bi bi-lock"></i> Suspend {% else %}
+                      <i class="bi bi-unlock"></i> Reactivate {% endif %}
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endblock %}
+</div>

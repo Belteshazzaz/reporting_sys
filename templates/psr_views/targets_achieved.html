@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Data on Targets Achieved</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        line-height: 1.6;
+      }
+      h1 {
+        color: #2c3e50;
+      }
+      .section {
+        margin-bottom: 25px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .label {
+        font-weight: bold;
+        width: 220px;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="{{ url_for('program_dashboard') }}">← Back to Dashboard</a>
+
+    <h1>Data on Targets Achieved</h1>
+
+    <div class="section">
+      <p>
+        <span class="label">Description of Target:</span>
+        {{ report.targets_report.target_description }}
+      </p>
+
+      <p>
+        <span class="label">Achievement (Value / Count):</span>
+        {{ report.targets_report.achievement_value }}
+      </p>
+
+      <p>
+        <span class="label">Remarks / Details:</span>
+        {{ report.targets_report.target_remarks }}
+      </p>
+    </div>
+
+    <div class="section">
+      <p>
+        <span class="label">Submitted On:</span>
+        {{ report.date_created.strftime('%Y-%m-%d') }}
+      </p>
+
+      <p>
+        <span class="label">Submitted By:</span>
+        {{ report.agent.name }}
+      </p>
+    </div>
+  </body>
+</html>

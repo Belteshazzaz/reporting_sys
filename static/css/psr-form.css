@@ -1,0 +1,79 @@
+/* ===========================
+   SAFE UI IMPROVEMENTS
+   =========================== */
+
+body {
+  background: #f3f6f4;
+}
+
+/* Form container */
+form {
+  width: 100%;
+  max-width: 1100px;
+}
+
+/* Improve section separation */
+.unique-fields {
+  margin-top: 30px;
+}
+
+/* Headings */
+.unique-fields h3,
+#dynamic_title {
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+/* Inputs */
+input,
+textarea,
+select {
+  font-size: 15px;
+}
+
+/* Buttons */
+button {
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+/* Dynamic row cards */
+#dynamic_rows_container > div {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  body {
+    padding: 15px;
+  }
+
+  form {
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  h2,
+  h3 {
+    font-size: 18px;
+  }
+
+  input,
+  textarea,
+  select {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  button {
+    width: 100%;
+  }
+}

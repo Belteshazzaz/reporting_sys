@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Database on Seizures / Enforcement Operations</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        line-height: 1.6;
+      }
+      h1 {
+        color: #8b0000;
+      }
+      .section {
+        margin-bottom: 25px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .label {
+        font-weight: bold;
+        width: 240px;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="{{ url_for('program_dashboard') }}">← Back to Dashboard</a>
+
+    <h1>Database on Enforcement Operations</h1>
+
+    {% set e = report.enforcement_operation %}
+
+    <div class="section">
+      <p>
+        <span class="label">Sector Classification:</span> {{
+        e.sector_classification }}
+      </p>
+      <p><span class="label">Date Commenced:</span> {{ e.date_commenced }}</p>
+      <p><span class="label">Date Completed:</span> {{ e.date_completed }}</p>
+      <p><span class="label">Objectives:</span> {{ e.objectives or 'N/A' }}</p>
+      <p>
+        <span class="label">Location / Address:</span> {{ e.location_address }}
+      </p>
+      <p><span class="label">Action Taken:</span> {{ e.action_taken }}</p>
+    </div>
+
+    <div class="section">
+      <h3>Items Seized</h3>
+      <p>
+        <span class="label">Description / Quantity:</span> {{
+        e.item_description_qty }}
+      </p>
+      <p><span class="label">Total Weight:</span> {{ e.total_weight }}</p>
+      <p><span class="label">Total Value (₦):</span> {{ e.total_value }}</p>
+    </div>
+
+    <div class="section">
+      <p><span class="label">Remarks:</span> {{ e.remarks or 'None' }}</p>
+    </div>
+
+    <div class="section">
+      <p>
+        <span class="label">Submitted On:</span>
+        {{ report.date_created.strftime('%Y-%m-%d') }}
+      </p>
+      <p>
+        <span class="label">Submitted By:</span>
+        {{ report.agent.name }}
+      </p>
+    </div>
+  </body>
+</html>

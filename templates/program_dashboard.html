@@ -1,0 +1,127 @@
+{% extends "base.html" %} {% block title %}PSR Dashboard{% endblock %} {% block
+content %}
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Program Status Reporter</h2>
+      <p class="text-muted mb-0">Welcome back, {{ current_user.name }}</p>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+      <span class="badge bg-success">
+        {% if current_user.role == 2 %} Admin {% else %} Agent {% endif %}
+      </span>
+
+      <a href="{{ url_for('program_report_form') }}" class="btn btn-primary">
+        + Submit Report
+      </a>
+    </div>
+  </div>
+
+  <!-- Navigation shortcuts -->
+  <div class="mb-4">
+    <a
+      href="{{ url_for('dashboard') }}"
+      class="btn btn-outline-secondary btn-sm me-2"
+    >
+      Price Reporter
+    </a>
+    <a
+      href="{{ url_for('complaints_dashboard') }}"
+      class="btn btn-outline-secondary btn-sm"
+    >
+      Complaints
+    </a>
+  </div>
+
+  <!-- Export -->
+  <div class="mb-4">
+    <a href="{{ url_for('export_psr_data') }}" class="btn btn-success w-100">
+      Export PSR Data to CSV
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="GET" class="row g-3">
+        <div class="col-md-6">
+          <input
+            type="text"
+            name="search"
+            class="form-control"
+            placeholder="Search reports by title..."
+          />
+        </div>
+        <div class="col-md-4">
+          <select name="template" class="form-select">
+            <option value="">All Templates</option>
+            {% for name, data in templates.items() %}
+            <option value="{{ data.slug }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100">Filter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reports Table -->
+  <div class="card">
+    <div class="card-body">
+      <h5 class="fw-bold mb-3">Submitted Reports</h5>
+
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Template</th>
+              <th>Title</th>
+              <th>Date Submitted</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for report in reports %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ report.psr_meta.title }}</td>
+              <td>{{ report.title }}</td>
+              <td>{{ report.date_created.strftime('%Y-%m-%d') }}</td>
+              <td class="d-flex gap-2">
+                <a
+                  href="{{ url_for('view_program_report', report_id=report.id) }}"
+                  class="btn btn-sm btn-primary"
+                >
+                  View
+                </a>
+
+                {% if current_user.role == 2 %}
+                <form
+                  method="POST"
+                  action="{{ url_for('delete_program_report', report_id=report.id) }}"
+                  onsubmit="return confirm('Delete this report?');"
+                >
+                  <button class="btn btn-sm btn-danger">Delete</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                No reports submitted yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

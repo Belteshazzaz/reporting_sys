@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Progress Report Details: {{ report.report_type }}</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+        line-height: 1.6;
+      }
+      .report-header h1 {
+        color: #343a40;
+      }
+      .report-section {
+        margin-bottom: 25px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .report-section h3 {
+        margin-top: 0;
+        color: #007bff;
+        border-bottom: 1px solid #007bff;
+        padding-bottom: 5px;
+      }
+      .detail-item {
+        margin-bottom: 10px;
+      }
+      .detail-item strong {
+        display: inline-block;
+        width: 150px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      <a href="{{ url_for('program_dashboard') }}"
+        >← Back to Program Dashboard</a
+      >
+    </p>
+
+    <div class="report-header">
+      <h1>{{ report.report_type }} (Report ID: {{ report.id }})</h1>
+      <h2>Progress Report Details</h2>
+    </div>
+
+    {% if report.psr_meta.category == 'enforcement' and report.seizure_details
+    %}
+    <div
+      class="report-section"
+      style="background-color: #f8f9fa; border-left: 5px solid #dc3545"
+    >
+      <h3>Seizure & Enforcement Details</h3>
+      <div class="detail-item">
+        <strong>Item/Qty:</strong> {{
+        report.seizure_details.item_description_qty }}
+      </div>
+      <div class="detail-item">
+        <strong>Sector:</strong> {{ report.seizure_details.sector_classification
+        }}
+      </div>
+      <div class="detail-item">
+        <strong>Total Value:</strong> {{ report.seizure_details.total_value }}
+      </div>
+      <div class="detail-item">
+        <strong>Action Taken:</strong> {{ report.seizure_details.action_taken }}
+      </div>
+    </div>
+    {% endif %} {% if report.psr_meta.category == 'targets' and
+    report.targets_report %}
+    <div
+      class="report-section"
+      style="background-color: #f8f9fa; border-left: 5px solid #28a745"
+    >
+      <h3>Target Achievement Details</h3>
+      <div class="detail-item">
+        <strong>Target:</strong> {{ report.targets_report.target_description }}
+      </div>
+      <div class="detail-item">
+        <strong>Value Achieved:</strong> {{
+        report.targets_report.achievement_value }}
+      </div>
+      <div class="detail-item">
+        <strong>Remarks:</strong> {{ report.targets_report.target_remarks }}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="report-section">
+      <h3>Core Data (Section A from Table)</h3>
+      <div class="detail-item"><strong>Title:</strong> {{ report.title }}</div>
+      <div class="detail-item">
+        <strong>Objective:</strong> {{ report.objective }}
+      </div>
+      <div class="detail-item">
+        <strong>Date Started:</strong> {{ report.date_started }}
+      </div>
+      <div class="detail-item">
+        <strong>Period Covered:</strong> {{ report.period_covered }}
+      </div>
+      <div class="detail-item">
+        <strong>Achievement % (Present):</strong> {{ report.status_percentage
+        }}%
+      </div>
+      <div class="detail-item">
+        <strong>Achievement % (Previous):</strong> {{
+        report.previous_status_percentage }}%
+      </div>
+      <div class="detail-item">
+        <strong>Date Submitted:</strong> {{
+        report.date_created.strftime('%Y-%m-%d %H:%M') }}
+      </div>
+      <div class="detail-item">
+        <strong>Submitted By:</strong> {{ report.agent.name }}
+      </div>
+    </div>
+
+    <div class="report-section">
+      <h3>Part A: Full Report Narrative (Details of Present Achievement)</h3>
+      <pre>{{ report.status_details | safe }}</pre>
+    </div>
+
+    <div class="report-section">
+      <h3>Part B: Constraints/Requirements</h3>
+      <pre>
+{{ report.constraints_requirements if report.constraints_requirements else 'None reported.' }}</pre
+      >
+    </div>
+  </body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>FCCPC Portal | Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap-icons.min.css') }}"
+    />
+
+    <!-- Fonts -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/fonts.css') }}"
+    />
+
+    <!-- Main Template Style -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+
+  <body
+    class="bg-light d-flex align-items-center justify-content-center"
+    style="min-height: 100vh"
+  >
+    <div
+      class="card shadow p-4"
+      style="width: 100%; max-width: 400px; border-radius: 12px"
+    >
+      <div class="text-center mb-3">
+        <!-- FCCPC Logo -->
+        <img
+          src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
+          alt="FCCPC Logo"
+          height="70"
+        />
+      </div>
+
+      <h4 class="text-center mb-4">Sign in to your account</h4>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }} small">{{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label">Staff Email</label>
+          <input type="email" name="email" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input
+            type="password"
+            name="password"
+            class="form-control"
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+      </form>
+
+      <div class="text-center mt-3">
+        <small>
+          Don't have an account?
+          <a href="{{ url_for('register') }}">Register</a>
+        </small>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+    <!-- Main JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sign Up</title>
+  </head>
+  <body>
+    <h1>Register New Field Agent</h1>
+
+    <form method="POST">
+      <div>
+        <label for="name">Full Name:</label
+        ><input type="text" name="name" required />
+      </div>
+      <div>
+        <label for="sex">Sex:</label>
+        <select name="sex" required>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+      <div>
+        <label for="fccpc_office">FCCPC Office Location:</label>
+        <select name="fccpc_office" required>
+          <option value="" disabled selected>-- Select State --</option>
+          {% for state in states %}
+          <option value="{{ state }}">{{ state }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="email">Email Address:</label
+        ><input type="email" name="email" required />
+      </div>
+      <div>
+        <label for="password">Password:</label
+        ><input type="password" name="password" required />
+      </div>
+
+      <button type="submit">Sign Up</button>
+    </form>
+    <p>Already have an account? <a href="{{ url_for('login') }}">Sign In</a></p>
+  </body>
+</html>

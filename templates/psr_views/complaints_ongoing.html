@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Consumer Complaint – Ongoing</title>
+    <style>
+      body {
+        font-family: Arial;
+        margin: 20px;
+      }
+      .section {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+      h2 {
+        color: #ffc107;
+      }
+      strong {
+        width: 220px;
+        display: inline-block;
+      }
+      pre {
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="{{ url_for('program_dashboard') }}">← Back</a>
+
+    <h1>Consumer Complaint (Ongoing)</h1>
+
+    <div class="section">
+      <p><strong>Case File No:</strong> {{ report.case_file_no }}</p>
+      <p>
+        <strong>Sector Classification:</strong> {{ report.sector_category }}
+      </p>
+      <p><strong>Date Received:</strong> {{ report.date_received }}</p>
+    </div>
+
+    <div class="section">
+      <h2>Complaint Details</h2>
+      <pre>{{ report.complaint_details }}</pre>
+    </div>
+
+    <div class="section">
+      <h2>Complainant Details</h2>
+      <pre>{{ report.complainant_details }}</pre>
+    </div>
+
+    <div class="section">
+      <h2>Respondent Details</h2>
+      <pre>{{ report.respondent_details }}</pre>
+    </div>
+
+    <div class="section">
+      <h2>Action Taken / Status</h2>
+      <pre>{{ report.action_taken }}</pre>
+
+      <p>
+        <strong>Value of Complaint (₦):</strong> {{ report.value_of_complaint }}
+      </p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Submit Program Report</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/psr-form.css') }}"
+    />
+    <style>
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #f7f9f8;
+        margin: 0;
+        padding: 30px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        color: #0f7a3d;
+      }
+
+      form {
+        max-width: 1000px;
+        margin: auto;
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        font-weight: 600;
+        margin-bottom: 6px;
+        display: block;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: #0f7a3d;
+        box-shadow: 0 0 0 2px rgba(15, 122, 61, 0.1);
+      }
+
+      .unique-fields {
+        background: #f4f8f6;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 25px;
+        border-left: 6px solid #0f7a3d;
+      }
+
+      .sub-form-group {
+        background: #fff;
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px dashed #ddd;
+      }
+
+      button {
+        background: #0f7a3d;
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: none;
+        color: white;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #0c6332;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      #dynamic_template_container > div {
+        background: #f9fbfa;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="margin-bottom: 20px">
+      <h1>Program Status Report Submission</h1>
+      <p>
+        <a href="{{ url_for('program_dashboard') }}"
+          >← Back to Program Dashboard</a
+        >
+      </p>
+    </div>
+
+    <form method="POST" action="{{ url_for('program_report_form') }}">
+      <div class="form-group">
+        <label for="report_type">1. Report Type / Template:</label>
+        <select
+          id="report_type"
+          name="report_type"
+          required
+          onchange="showUniqueFields()"
+        >
+          <option value="">-- Select a Report Category --</option>
+          {% for type in report_types %}
+          <option
+            value="{{ psr_templates[type].slug }}"
+            data-category="{{ psr_templates[type].category }}"
+            data-common="{{ psr_templates[type].requires_common_fields | default(false) }}"
+          >
+            {{ type }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div id="unique_fields_wrapper">
+        <div id="complaint_details_section" class="unique-fields hidden">
+          <h3>Consumer Complaint Database Details</h3>
+          <div class="form-group">
+            <label for="case_file_no">1. CASE FILE NO:</label>
+            <input type="text" id="case_file_no" name="case_file_no" required />
+          </div>
+          <div class="form-group">
+            <label>2. SECTOR CLASSIFICATION / CATEGORY:</label>
+            <input type="text" name="sector_category" />
+          </div>
+          <div class="form-group">
+            <label>3. DATE & TIME RECEIVED:</label>
+            <input type="datetime-local" name="date_received" required />
+          </div>
+          <div class="form-group">
+            <label>4. COMPLAINT (Full Description):</label>
+            <textarea name="complaint_details" rows="3"></textarea>
+          </div>
+
+          <div class="form-group sub-form-group">
+            <label style="font-weight: bold">5. COMPLAINANT DETAILS:</label>
+            <input
+              type="text"
+              name="complainant_name"
+              placeholder="Name"
+              style="margin-bottom: 5px"
+            />
+            <textarea
+              name="complainant_address"
+              rows="2"
+              placeholder="Full Address"
+              style="margin-bottom: 5px"
+            ></textarea>
+            <input
+              type="email"
+              name="complainant_email"
+              placeholder="Email Address"
+              style="margin-bottom: 5px"
+            />
+            <input
+              type="tel"
+              name="complainant_phone"
+              placeholder="Phone Number"
+            />
+          </div>
+
+          <div class="form-group sub-form-group">
+            <label style="font-weight: bold">6. RESPONDENT DETAILS:</label>
+            <input
+              type="text"
+              name="respondent_name"
+              placeholder="Name"
+              style="margin-bottom: 5px"
+            />
+            <textarea
+              name="respondent_address"
+              rows="2"
+              placeholder="Full Address"
+            ></textarea>
+          </div>
+
+          <div id="fields_t3_only" class="hidden">
+            <div class="form-group">
+              <label>7. ACTION TAKEN:</label
+              ><textarea name="action_taken" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label>8. STATUS OF COMPLAINT (WITH DATE & TIME):</label
+              ><textarea name="status_date_time" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label>9. VALUE OF COMPLAINTS (=N=):</label
+              ><input type="number" name="value_of_complaint" step="0.01" />
+            </div>
+          </div>
+
+          <div id="fields_t4_only" class="hidden">
+            <div class="form-group">
+              <label>7. ACTION TAKEN / STATUS (WITH DATE & TIME):</label
+              ><textarea name="action_taken_combined" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label>8. VALUE OF COMPLAINTS (=N=):</label
+              ><input type="number" name="value_of_complaint_t4" step="0.01" />
+            </div>
+          </div>
+
+          <div id="fields_t5_only" class="hidden">
+            <div class="form-group">
+              <label>7. DATE OF RESOLUTION:</label
+              ><input type="datetime-local" name="date_of_resolution" />
+            </div>
+            <div class="form-group">
+              <label>8. VALUE (N) / REMARKS:</label
+              ><textarea name="value_remarks" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label>9. COMPLAINANT’S REMARK:</label
+              ><textarea name="complainant_remark" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div id="enforcement_operations" class="unique-fields hidden">
+          <h3>6. Database on Seizures/Enforcement Operations</h3>
+          <div class="form-group">
+            <label>1. SECTOR CLASSIFICATION:</label
+            ><input type="text" name="seizure_sector" />
+          </div>
+          <div class="form-group">
+            <label>2. DATE COMMENCED:</label
+            ><input type="date" name="seizure_commenced" />
+          </div>
+          <div class="form-group">
+            <label>3. DATE COMPLETED:</label
+            ><input type="date" name="seizure_completed" />
+          </div>
+          <div class="form-group">
+            <label>4. OBJECTIVES:</label
+            ><textarea name="seizure_objectives" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>5. LOCATION / ADDRESS:</label
+            ><textarea name="seizure_location" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>6. ACTION TAKEN:</label
+            ><textarea name="seizure_action" rows="2"></textarea>
+          </div>
+          <div class="form-group sub-form-group">
+            <label style="color: #007bff">7. ITEMS SEIZED:</label>
+            <label>7.1 DESCRIPTION / QTY:</label
+            ><textarea name="seizure_item_desc" rows="2"></textarea>
+            <label>7.2 TOTAL WEIGHT:</label
+            ><input type="text" name="seizure_weight" />
+            <label>7.3 TOTAL VALUE (=N=):</label
+            ><input type="text" name="seizure_value" />
+          </div>
+          <div class="form-group">
+            <label>8. REMARKS:</label
+            ><textarea name="seizure_remarks" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div id="targets_achieved" class="unique-fields hidden">
+          <h3>2. Data on Targets Achieved - Details</h3>
+          <div class="form-group">
+            <label for="target_select">Description of Target:</label>
+            <select
+              id="target_select"
+              name="target_select"
+              onchange="toggleOtherTargetField()"
+            >
+              <option value="">-- Select a Target --</option>
+              {% for target in targets_list %}
+              <option value="{{ target }}">{{ target }}</option>
+              {% endfor %}
+              <option value="Other">Other (Specify Below)</option>
+            </select>
+          </div>
+          <div id="other_target_field" class="hidden form-group">
+            <label>Specify Target Description:</label>
+            <input type="text" name="target_description_manual" />
+          </div>
+          <div class="form-group">
+            <label>Achievement (Value/Count):</label>
+            <input type="number" name="achievement_value" min="0" value="0" />
+          </div>
+          <div class="form-group">
+            <label>Remarks/Details:</label>
+            <textarea name="target_remarks" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="dynamic_template_container" class="unique-fields hidden">
+        <h3 id="dynamic_title"></h3>
+
+        <div id="dynamic_rows_container"></div>
+
+        <button
+          type="button"
+          onclick="addDynamicRow()"
+          style="margin-top: 10px"
+        >
+          ➕ Add Another Entry
+        </button>
+      </div>
+
+      <hr id="common_fields_hr" class="hidden" style="margin-top: 25px" />
+
+      <div id="common_fields_container" class="hidden">
+        <h2>Common Report Details</h2>
+        <div class="form-group">
+          <label>2. PROJECT/PROGRAMME TITLE:</label>
+          <input type="text" id="title" name="title" />
+        </div>
+        <div class="form-group">
+          <label>3. PERIOD COVERED:</label>
+          <input type="text" name="period_covered" />
+        </div>
+        <div class="form-group">
+          <label>4. OBJECTIVES:</label>
+          <textarea name="objective" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Date Started:</label>
+          <input type="date" name="date_started" />
+        </div>
+        <div class="form-group">
+          <label>PREVIOUS STATUS (%):</label>
+          <input
+            type="number"
+            name="previous_status_percentage"
+            min="0"
+            max="100"
+            value="0"
+          />
+        </div>
+        <div class="form-group">
+          <label>5. DETAILS OF PRESENT ACHIEVEMENT:</label>
+          <textarea
+            id="status_details"
+            name="status_details"
+            rows="6"
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label>6. CONSTRAINTS/REQUIREMENTS:</label>
+          <textarea name="constraints" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>7. PRESENT STATUS (%):</label>
+          <input
+            type="number"
+            id="status_percentage"
+            name="status_percentage"
+            min="0"
+            max="100"
+            value="0"
+          />
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        style="
+          padding: 10px 20px;
+          background-color: #28a745;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        "
+      >
+        Submit Report
+      </button>
+    </form>
+
+    <script>
+      function disableSection(section) {
+        section.querySelectorAll("input, textarea, select").forEach(el => {
+          el.disabled = true;
+        });
+      }
+
+      function enableSection(section) {
+        section.querySelectorAll("input, textarea, select").forEach(el => {
+          el.disabled = false;
+        });
+      }
+
+      function toggleOtherTargetField() {
+        const select = document.getElementById("target_select");
+        const otherDiv = document.getElementById("other_target_field");
+
+        if (select && otherDiv) {
+          otherDiv.classList.toggle("hidden", select.value !== "Other");
+        }
+      }
+
+      function toggleComplaintFields(slug) {
+        const t3 = document.getElementById("fields_t3_only");
+        const t4 = document.getElementById("fields_t4_only");
+        const t5 = document.getElementById("fields_t5_only");
+
+        [t3, t4, t5].forEach(sec => {
+          sec.classList.add("hidden");
+          disableSection(sec);
+        });
+
+        if (slug === "complaints_received") {
+          t3.classList.remove("hidden");
+          enableSection(t3);
+        } else if (slug === "complaints_ongoing") {
+          t4.classList.remove("hidden");
+          enableSection(t4);
+        } else if (slug === "complaints_resolved") {
+          t5.classList.remove("hidden");
+          enableSection(t5);
+        }
+      }
+
+      const dynamicTemplates = {{ dynamic_templates | tojson }};
+      let currentFields = [];
+
+      function showUniqueFields() {
+        const select = document.getElementById("report_type");
+        const selectedSlug = select.value;
+
+        if (!selectedSlug) return;
+
+        const selectedOption = select.options[select.selectedIndex];
+        const requiresCommon =
+          selectedOption.dataset.common === "true" ||
+          selectedOption.dataset.common === "True";
+        const category = selectedOption.dataset.category;
+
+        const commonContainer = document.getElementById("common_fields_container");
+        const hrElement = document.getElementById("common_fields_hr");
+
+        // Hide and disable all sections first
+        document.querySelectorAll(".unique-fields").forEach(div => {
+          div.classList.add("hidden");
+          disableSection(div);
+        });
+
+        commonContainer.classList.add("hidden");
+        disableSection(commonContainer);
+        hrElement.classList.add("hidden");
+
+        // Complaints section
+        if (category === "complaints") {
+          const complaintSection = document.getElementById("complaint_details_section");
+          complaintSection.classList.remove("hidden");
+          enableSection(complaintSection);
+          toggleComplaintFields(selectedSlug);
+        }
+
+        // Common fields
+        if (requiresCommon) {
+          commonContainer.classList.remove("hidden");
+          enableSection(commonContainer);
+          hrElement.classList.remove("hidden");
+        }
+
+        // Specific static section
+        const section = document.getElementById(selectedSlug);
+        if (section) {
+          section.classList.remove("hidden");
+          enableSection(section);
+        }
+
+        // ===== DYNAMIC FORM =====
+        const dynamicContainer = document.getElementById("dynamic_template_container");
+        const rowsContainer = document.getElementById("dynamic_rows_container");
+        const title = document.getElementById("dynamic_title");
+
+        rowsContainer.innerHTML = "";
+
+        if (dynamicTemplates[selectedSlug]) {
+          dynamicContainer.classList.remove("hidden");
+          enableSection(dynamicContainer);
+
+          const config = dynamicTemplates[selectedSlug];
+          title.innerText = config.title;
+          currentFields = config.fields;
+
+          // Add first row automatically
+          addDynamicRow();
+        }
+      }
+
+      function addDynamicRow() {
+        const container = document.getElementById("dynamic_rows_container");
+
+        const wrapper = document.createElement("div");
+        wrapper.style.border = "1px solid #ccc";
+        wrapper.style.padding = "15px";
+        wrapper.style.marginBottom = "15px";
+        wrapper.style.borderRadius = "8px";
+        wrapper.style.background = "#ffffff";
+
+        currentFields.forEach(field => {
+          const group = document.createElement("div");
+          group.style.marginBottom = "12px";
+
+          const label = document.createElement("label");
+          label.innerText = field.label;
+
+          let input;
+
+          if (field.key === "sn") {
+            input = document.createElement("input");
+            input.type = "number";
+            input.value = container.children.length + 1;
+            input.readOnly = true;
+            input.style.background = "#eee";
+          } else if (field.type === "textarea") {
+            input = document.createElement("textarea");
+            input.rows = 3;
+          } else {
+            input = document.createElement("input");
+            input.type = field.type || "text";
+          }
+
+          input.name = field.key;
+          input.style.width = "100%";
+          input.style.padding = "10px";
+          input.style.fontSize = "16px";
+
+          group.appendChild(label);
+          group.appendChild(input);
+          wrapper.appendChild(group);
+        });
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.innerText = "❌ Remove Entry";
+        removeBtn.style.background = "#dc3545";
+        removeBtn.style.marginTop = "10px";
+        removeBtn.onclick = () => wrapper.remove();
+
+        wrapper.appendChild(removeBtn);
+        container.appendChild(wrapper);
+      }
+    </script>
+  </body>
+</html>

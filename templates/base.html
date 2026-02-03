@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}FCCPC Portal{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap-icons.min.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/fonts.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+
+  <body>
+    <!-- Top Bar -->
+    <nav class="navbar navbar-dark" style="background: #006837">
+      <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+          <img
+            src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
+            height="40"
+            class="me-2"
+          />
+          FCCPC Portal
+        </a>
+      </div>
+    </nav>
+
+    <div class="d-flex">
+      {% if current_user.is_authenticated %}
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="mb-4">
+          <small class="text-muted">Logged in as</small><br />
+          <strong>{{ current_user.email }}</strong>
+        </div>
+
+        <a href="{{ url_for('program_dashboard') }}" class="nav-link">
+          <i class="bi bi-journal-text"></i>
+          Program Status (PSR)
+        </a>
+
+        <a href="{{ url_for('dashboard') }}" class="nav-link">
+          <i class="bi bi-bar-chart"></i>
+          Price Reports
+        </a>
+
+        <a href="{{ url_for('complaints_dashboard') }}" class="nav-link">
+          <i class="bi bi-chat-left-text"></i>
+          Complaints
+        </a>
+
+        {% if current_user.is_admin() %}
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+          <i class="bi bi-shield-lock"></i>
+          Admin Portal
+        </a>
+
+        <a href="{{ url_for('audit_logs') }}" class="nav-link">
+          <i class="bi bi-clock-history"></i>
+          Audit Logs
+        </a>
+        {% endif %}
+
+        <div class="mt-auto">
+          <a href="{{ url_for('logout') }}" class="nav-link text-danger">
+            <i class="bi bi-box-arrow-right"></i>
+            Logout
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Main Content -->
+      <div class="main-content p-4 w-100">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+
+    <!-- JS -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

@@ -1,0 +1,360 @@
+/* =========================================
+   Global Styles & Variables
+   ========================================= */
+:root {
+  --primary-color: #0a6535;
+  --primary-light: rgba(10, 101, 53, 0.1);
+  --bg-light: #f6f6f8;
+  --sidebar-width: 260px;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  background-color: var(--bg-light);
+  color: #111218;
+  margin: 0;
+  overflow-x: hidden; /* Default to hidden to prevent scrollbars */
+}
+
+/* Sidebar Styles */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
+  min-height: 100vh;
+  background: white;
+  border-right: 1px solid #dbdde6;
+  position: fixed;
+  left: 0;
+  top: 0;
+  transition: all 0.3s;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+/* Nav Link - Standard and Custom Merged */
+.nav-link,
+.nav-link-custom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 15px;
+  color: #616889;
+  font-weight: 500;
+  border-radius: 8px;
+  text-decoration: none;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.nav-link i,
+.nav-link-custom i {
+  font-size: 1.25rem; /* Standardized to 1.25rem */
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-link:hover,
+.nav-link.active,
+.nav-link-custom:hover,
+.nav-link-custom.active {
+  background-color: var(--primary-light); /* variables reused */
+  color: var(--primary-color) !important;
+}
+
+/* Dashboard specific active state */
+.nav-link.active {
+  /* If dashboard relies on this, we keep it, otherwise it overrides above */
+  /* border-right: 4px solid var(--primary-color); */
+  /* border-radius: 8px 0 0 8px; */
+  /* Commented out as it conflicts with other pages. 
+       If dashboard needs this explicitly, let's keep it generally or standardize.
+       The standardized .active simply has bg and color.
+    */
+}
+
+/* Main Content Area */
+.main-content {
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+  transition: all 0.3s;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .sidebar.show {
+    transform: translateX(0);
+    box-shadow: 10px 0 15px rgba(0, 0, 0, 0.05);
+  }
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Components */
+.card {
+  border-radius: 12px;
+  border: 1px solid #dbdde6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  font-weight: 700;
+  padding: 0.75rem; /* From login */
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.btn-primary:hover {
+  background-color: #084d28;
+  border-color: #084d28;
+  transform: translateY(-1px); /* From login */
+}
+
+.logo-box {
+  width: 40px;
+  height: 40px;
+  background-color: var(--primary-color) !important;
+  border-radius: 8px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.5rem; /* Ensure icon size */
+}
+
+/* Form Controls */
+.form-control {
+  border: 1px solid #dbdde6;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(10, 101, 53, 0.1);
+}
+
+/* =========================================
+   Index.html / Login Specific
+   ========================================= */
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #dbdde6;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  padding: 2.5rem;
+}
+.login-card .logo-box {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 1.2rem auto;
+}
+.footer-links a {
+  color: #616889;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.footer-links a:hover {
+  color: var(--primary-color);
+}
+
+/* =========================================
+   Dashboard Specific
+   ========================================= */
+.chart-container {
+  height: 200px;
+  position: relative;
+}
+.status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 50px;
+  text-transform: uppercase;
+}
+
+/* =========================================
+   Settings Specific
+   ========================================= */
+.settings-card {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.settings-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  background-color: #fcfcfd;
+}
+.btn-save {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.btn-save:hover {
+  background-color: #08502a;
+  color: white;
+}
+
+/* =========================================
+   Staff Specific
+   ========================================= */
+.card-stat {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.table-container {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.badge-role {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 50px;
+}
+.btn-primary-custom {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: 0.2s;
+}
+.btn-primary-custom:hover {
+  background-color: #08502a;
+  color: white;
+  box-shadow: 0 4px 12px rgba(10, 101, 53, 0.2);
+}
+.status-dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* =========================================
+   Summit Specific
+   ========================================= */
+.submission-card {
+  background: white;
+  border: 1px solid #dbdde6;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+.section-header {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary-color);
+  border-bottom: 1px solid #f0f1f5;
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+
+/* =========================================
+   Analytics Specific
+   ========================================= */
+.status-badge {
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 50px;
+  text-transform: uppercase;
+}
+.modal-content {
+  border-radius: 16px;
+  border: none;
+}
+.modal-header {
+  border-bottom: 1px solid #f0f1f5;
+}
+.table thead th {
+  background-color: #f8f9fa;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #dbdde6;
+}
+
+.main-content {
+  overflow-x: auto;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* =========================================
+   Admin Tables (Unified Clean Version)
+   ========================================= */
+
+.admin-table-wrapper {
+  max-width: 100%;
+  max-height: 70vh;
+  overflow: auto;
+  border-radius: 0 0 8px 8px;
+}
+
+.admin-table-wrapper table {
+  white-space: nowrap;
+}
+
+.admin-table-wrapper td,
+.admin-table-wrapper th {
+  vertical-align: middle;
+}
+
+.admin-table-wrapper thead th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 2;
+}
+
+.btn {
+  border-radius: 8px;
+}

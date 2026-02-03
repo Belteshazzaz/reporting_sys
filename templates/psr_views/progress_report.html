@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Progress Report</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        line-height: 1.6;
+      }
+      h1 {
+        color: #343a40;
+      }
+      h2 {
+        margin-top: 30px;
+        color: #007bff;
+        border-bottom: 1px solid #007bff;
+        padding-bottom: 5px;
+      }
+      .section {
+        margin-bottom: 25px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .label {
+        font-weight: bold;
+        width: 240px;
+        display: inline-block;
+      }
+      pre {
+        white-space: pre-wrap;
+        font-family: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="{{ url_for('program_dashboard') }}">← Back to Dashboard</a>
+
+    <h1>Progress Report</h1>
+
+    <div class="section">
+      <p>
+        <span class="label">Project / Programme Title:</span> {{ report.title }}
+      </p>
+      <p>
+        <span class="label">Period Covered:</span> {{ report.period_covered }}
+      </p>
+      <p><span class="label">Objectives:</span> {{ report.objective }}</p>
+      <p><span class="label">Date Started:</span> {{ report.date_started }}</p>
+      <p>
+        <span class="label">Previous Status (%):</span> {{
+        report.previous_status_percentage }}%
+      </p>
+      <p>
+        <span class="label">Present Status (%):</span> {{
+        report.status_percentage }}%
+      </p>
+      <p>
+        <span class="label">Date Submitted:</span>
+        {{ report.date_created.strftime('%Y-%m-%d') }}
+      </p>
+      <p>
+        <span class="label">Submitted By:</span>
+        {{ report.agent.name }}
+      </p>
+    </div>
+
+    <h2>Details of Present Achievement</h2>
+    <div class="section">
+      <pre>{{ report.status_details }}</pre>
+    </div>
+
+    <h2>Constraints / Requirements</h2>
+    <div class="section">
+      <pre>
+{{ report.constraints_requirements if report.constraints_requirements else 'None reported.' }}
+  </pre
+      >
+    </div>
+  </body>
+</html>

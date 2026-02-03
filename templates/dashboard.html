@@ -1,0 +1,118 @@
+{% extends "base.html" %} {% block title %}Price Report Dashboard{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Price Reports Dashboard</h3>
+
+  <div>
+    <a href="{{ url_for('report_form') }}" class="btn btn-success btn-sm">
+      + Submit New Report
+    </a>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%} {% for category, message in messages %}
+<div class="alert alert-success">{{ message }}</div>
+{% endfor %} {% endif %} {% endwith %}
+
+<p class="text-muted">Total reports: <strong>{{ data | length }}</strong></p>
+
+<form method="GET" action="{{ url_for('dashboard') }}" class="row g-2 mb-4">
+  <div class="col-md-6">
+    <input
+      type="text"
+      name="search"
+      class="form-control"
+      placeholder="Search product name..."
+      value="{{ request.args.get('search', '') }}"
+    />
+  </div>
+
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-primary w-100">Search</button>
+  </div>
+
+  {% if request.args.get('search') %}
+  <div class="col-md-2">
+    <a
+      href="{{ url_for('dashboard') }}"
+      class="btn btn-outline-secondary w-100"
+    >
+      Clear
+    </a>
+  </div>
+  {% endif %}
+</form>
+
+<div class="card mb-4">
+  <div class="card-body">
+    {% if price_trend_chart_json %}
+    <div id="price-trend-chart"></div>
+    {% else %}
+    <p class="text-muted text-center">
+      Submit at least two reports to view price trends.
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Product</th>
+          <th>Location</th>
+          <th>Price (₦)</th>
+          <th>Agent</th>
+          {% if current_user.is_admin() %}
+          <th>Action</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for report in data %}
+        <tr>
+          <td>{{ report.id }}</td>
+          <td>{{ report.product_name }}</td>
+          <td>{{ report.market_location }}</td>
+          <td>{{ "{:,.2f}".format(report.price) }}</td>
+          <td>{{ report.agent_name }}</td>
+
+          {% if current_user.is_admin() %}
+          <td>
+            <a
+              href="{{ url_for('edit_report', report_id=report.id) }}"
+              class="btn btn-sm btn-outline-primary"
+            >
+              Edit
+            </a>
+
+            <form
+              method="POST"
+              action="{{ url_for('delete_report', report_id=report.id) }}"
+              style="display: inline"
+              onsubmit="return confirm('Delete this report?');"
+            >
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+{% if price_trend_chart_json %}
+<script>
+  var chartData = {{ price_trend_chart_json | safe }};
+  Plotly.newPlot("price-trend-chart", chartData);
+</script>
+{% endif %} {% endblock %}

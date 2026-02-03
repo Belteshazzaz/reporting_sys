@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Surveillance Operations</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background: #f2f2f2;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="{{ url_for('program_dashboard') }}">← Back to Dashboard</a>
+
+    <h1>DATABASE ON SURVEILLANCE OPERATIONS</h1>
+    <p><strong>Report ID:</strong> {{ report.id }}</p>
+    <p>
+      <strong>Submitted:</strong> {{ report.date_created.strftime('%Y-%m-%d
+      %H:%M') }}
+    </p>
+
+    <hr />
+
+    {% if report.psr_rows %}
+
+    <table>
+      <thead>
+        <tr>
+          {% for field in report.psr_rows[0].values %}
+          <th>{{ field.field_key.replace('_', ' ').title() }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in report.psr_rows %}
+        <tr>
+          {% for field in row.values %}
+          <td>{{ field.field_value }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <p><em>No data found for this report.</em></p>
+    {% endif %}
+  </body>
+</html>
