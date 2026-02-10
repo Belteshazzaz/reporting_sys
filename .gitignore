@@ -1,0 +1,23 @@
+# Database files
+instance/
+*.db
+*.sqlite
+*.sqlite3
+project.db
+fccpc.db
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
