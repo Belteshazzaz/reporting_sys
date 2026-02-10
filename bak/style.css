@@ -1,6 +1,6 @@
 /* =========================================
    FCCPC Portal - Professional Design System
-   FULLY CORRECTED - All Variables Consistent
+   Clean Version - No Conflicts
    ========================================= */
 
 /* =========================================
@@ -9,13 +9,11 @@
 :root {
   /* Brand Colors - Official FCCPC Green */
   --primary-green: #006837;
-  --primary: #006837; /* Alias for compatibility */
   --primary-dark: #004d28;
   --primary-light: #00a854;
   --primary-subtle: rgba(0, 104, 55, 0.08);
-  --primary-alpha: rgba(0, 104, 55, 0.1);
 
-  /* Neutral Colors (Primary naming) */
+  /* Neutral Colors */
   --neutral-50: #fafafa;
   --neutral-100: #f5f5f5;
   --neutral-200: #e5e5e5;
@@ -26,21 +24,6 @@
   --neutral-700: #404040;
   --neutral-800: #262626;
   --neutral-900: #171717;
-
-  /* Gray Colors (Aliases for compatibility) */
-  --gray-50: #fafafa;
-  --gray-100: #f5f5f5;
-  --gray-200: #e5e5e5;
-  --gray-300: #d4d4d4;
-  --gray-400: #a3a3a3;
-  --gray-500: #737373;
-  --gray-600: #525252;
-  --gray-700: #404040;
-  --gray-800: #262626;
-  --gray-900: #171717;
-
-  /* Background Colors */
-  --bg-white: #ffffff;
 
   /* Semantic Colors */
   --success: #10b981;
@@ -66,17 +49,11 @@
     Arial, sans-serif;
   --font-heading: "Segoe UI Semibold", "Segoe UI", sans-serif;
 
-  /* Border Radius (Primary naming) */
+  /* Border Radius */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-xl: 20px;
-
-  /* Border Radius (Aliases for compatibility) */
-  --border-radius-sm: 6px;
-  --border-radius-md: 10px;
-  --border-radius-lg: 14px;
-  --border-radius-xl: 20px;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -421,9 +398,7 @@ a {
   background: var(--neutral-50);
 }
 
-/* =========================================
-   Stats Cards - CORRECTED VERSION
-   ========================================= */
+/* Stats Cards */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -432,27 +407,25 @@ a {
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-white);
   border: 1px solid var(--neutral-200);
-  border-radius: var(--radius-lg);
+  border-radius: var(--border-radius-lg);
   padding: var(--space-lg);
   display: flex;
   align-items: center;
   gap: var(--space-lg);
   transition: all var(--transition-base);
-  cursor: pointer;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  border-color: var(--primary-green);
 }
 
 .stat-icon {
   width: 56px;
   height: 56px;
-  border-radius: var(--radius-md);
+  border-radius: var(--border-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -461,8 +434,8 @@ a {
 }
 
 .stat-icon-primary {
-  background: var(--primary-subtle);
-  color: var(--primary-green);
+  background: var(--primary-alpha);
+  color: var(--primary);
 }
 
 .stat-icon-success {
@@ -480,25 +453,16 @@ a {
   color: var(--danger);
 }
 
-.stat-icon-info {
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--info);
-}
-
 .stat-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .stat-label {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--neutral-600);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin: 0;
 }
 
 .stat-value {
@@ -506,12 +470,12 @@ a {
   font-weight: 700;
   color: var(--neutral-900);
   line-height: 1.2;
-  margin: 4px 0;
+  margin-top: 4px;
 }
 
 .stat-change {
   font-size: 12px;
-  margin: 0;
+  margin-top: 4px;
 }
 
 .stat-change-positive {
@@ -614,11 +578,6 @@ a {
 .badge-secondary {
   background: var(--neutral-200);
   color: var(--neutral-700);
-}
-
-/* Bootstrap compatibility */
-.bg-primary {
-  background-color: var(--primary-green) !important;
 }
 
 /* =========================================
@@ -754,11 +713,6 @@ textarea.form-control {
   margin-top: var(--space-xs);
 }
 
-/* Filter Form specific */
-.filter-form {
-  margin: 0;
-}
-
 /* =========================================
    Tables
    ========================================= */
@@ -772,7 +726,6 @@ textarea.form-control {
   width: 100%;
   border-collapse: collapse;
   background: white;
-  margin: 0;
 }
 
 .table thead {
@@ -807,14 +760,6 @@ textarea.form-control {
 
 .table tbody tr:last-child td {
   border-bottom: none;
-}
-
-.table-hover tbody tr:hover {
-  background-color: var(--neutral-50);
-}
-
-.align-middle {
-  vertical-align: middle !important;
 }
 
 .table-actions {
@@ -869,86 +814,6 @@ textarea.form-control {
 }
 
 /* =========================================
-   Breadcrumb
-   ========================================= */
-.breadcrumb {
-  display: flex;
-  flex-wrap: wrap;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  list-style: none;
-  background-color: var(--neutral-100);
-  border-radius: var(--radius-md);
-}
-
-.breadcrumb-item {
-  display: flex;
-  align-items: center;
-}
-
-.breadcrumb-item + .breadcrumb-item::before {
-  content: "/";
-  padding: 0 0.5rem;
-  color: var(--neutral-500);
-}
-
-.breadcrumb-item a {
-  color: var(--primary-green);
-  text-decoration: none;
-}
-
-.breadcrumb-item a:hover {
-  text-decoration: underline;
-}
-
-.breadcrumb-item.active {
-  color: var(--neutral-600);
-}
-
-/* =========================================
-   Input Groups
-   ========================================= */
-.input-group {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  width: 100%;
-}
-
-.input-group-text {
-  display: flex;
-  align-items: center;
-  padding: var(--space-md) var(--space-lg);
-  font-size: 0.95rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: var(--neutral-700);
-  text-align: center;
-  white-space: nowrap;
-  background-color: var(--neutral-100);
-  border: 1px solid var(--neutral-300);
-  border-radius: var(--radius-md);
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  border-right: none;
-}
-
-.input-group .form-control {
-  position: relative;
-  flex: 1 1 auto;
-  width: 1%;
-  min-width: 0;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.input-group:focus-within .input-group-text {
-  border-color: var(--primary-green);
-  color: var(--primary-green);
-}
-
-/* =========================================
    Responsive Design
    ========================================= */
 @media (max-width: 1024px) {
@@ -994,16 +859,13 @@ textarea.form-control {
     justify-content: stretch;
   }
 
+  /* Stat cards stay horizontal on mobile too */
   .stat-card {
     flex-direction: row;
   }
 
   .table-responsive {
     font-size: 0.85rem;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -1017,7 +879,7 @@ textarea.form-control {
   text-align: right;
 }
 .text-muted {
-  color: var(--neutral-600) !important;
+  color: var(--neutral-600);
 }
 .text-success {
   color: var(--success);
@@ -1030,7 +892,7 @@ textarea.form-control {
 }
 
 .d-flex {
-  display: flex !important;
+  display: flex;
 }
 .d-block {
   display: block;
@@ -1070,7 +932,7 @@ textarea.form-control {
   margin-top: var(--space-md);
 }
 .mb-0 {
-  margin-bottom: 0 !important;
+  margin-bottom: 0;
 }
 .mb-1 {
   margin-bottom: var(--space-sm);
@@ -1091,15 +953,6 @@ textarea.form-control {
   padding: 0;
 }
 
-.py-5 {
-  padding-top: 3rem !important;
-  padding-bottom: 3rem !important;
-}
-
-.small {
-  font-size: 0.875em;
-}
-
 .w-100 {
   width: 100%;
 }
@@ -1108,25 +961,6 @@ textarea.form-control {
   display: flex;
   flex-wrap: wrap;
   margin: 0 -12px;
-}
-
-.g-3 {
-  --bs-gutter-x: 1rem;
-  --bs-gutter-y: 1rem;
-  margin-right: calc(-0.5 * var(--bs-gutter-x));
-  margin-left: calc(-0.5 * var(--bs-gutter-x));
-}
-
-.g-3 > * {
-  padding-right: calc(var(--bs-gutter-x) * 0.5);
-  padding-left: calc(var(--bs-gutter-x) * 0.5);
-  margin-top: var(--bs-gutter-y);
-}
-
-.col-md-2 {
-  flex: 0 0 16.66%;
-  max-width: 16.66%;
-  padding: 0 12px;
 }
 
 .col-md-3 {
@@ -1141,17 +975,16 @@ textarea.form-control {
   padding: 0 12px;
 }
 
-.col-md-6 {
-  flex: 0 0 50%;
-  max-width: 50%;
+.col-md-2 {
+  flex: 0 0 16.66%;
+  max-width: 16.66%;
   padding: 0 12px;
 }
 
 @media (max-width: 768px) {
-  .col-md-2,
   .col-md-3,
   .col-md-5,
-  .col-md-6 {
+  .col-md-2 {
     flex: 0 0 100%;
     max-width: 100%;
   }

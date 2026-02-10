@@ -1,74 +1,339 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Database on Seizures / Enforcement Operations</title>
+    <title>Database on Enforcement Operations - PSR_06</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
+        font-family: "Arial", sans-serif;
         line-height: 1.6;
+        color: #333;
       }
-      h1 {
-        color: #8b0000;
+
+      /* FCCPC Header */
+      .fccpc-header {
+        background: white;
+        border-bottom: 4px solid #006837;
+        padding: 20px 40px;
+        text-align: center;
+        margin-bottom: 30px;
       }
-      .section {
-        margin-bottom: 25px;
+
+      .fccpc-logo {
+        max-width: 80px;
+        margin-bottom: 10px;
+      }
+
+      .fccpc-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #006837;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .fccpc-subtitle {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      /* Action Buttons */
+      .action-buttons {
+        padding: 0 40px 20px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background: #006837;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #005028;
+      }
+
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #5a6268;
+      }
+
+      /* Content Container */
+      .container {
+        padding: 0 40px 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      /* Report Title */
+      .report-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #006837;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #006837;
+      }
+
+      /* Report Info */
+      .report-info {
+        background: #f8f9fa;
         padding: 15px;
-        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 25px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .info-item {
+        display: flex;
+      }
+
+      .info-label {
+        font-weight: bold;
+        min-width: 180px;
+        color: #495057;
+      }
+
+      .info-value {
+        color: #212529;
+      }
+
+      /* Data Table */
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .data-table th {
+        background: #006837;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+      }
+
+      .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .data-table tbody tr:hover {
+        background: #f8f9fa;
+      }
+
+      .data-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Section Headers */
+      .section-header {
+        background: #006837;
+        color: white;
+        padding: 10px 15px;
+        font-weight: bold;
+        margin-top: 25px;
+        margin-bottom: 15px;
         border-radius: 5px;
       }
-      .label {
-        font-weight: bold;
-        width: 240px;
+
+      /* Back Link */
+      .back-link {
         display: inline-block;
+        padding: 8px 16px;
+        color: #006837;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 20px;
+        border: 2px solid #006837;
+        border-radius: 5px;
+        transition: all 0.3s;
+      }
+
+      .back-link:hover {
+        background: #006837;
+        color: white;
+      }
+
+      /* Print Styles */
+      @media print {
+        .action-buttons,
+        .back-link {
+          display: none !important;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+        }
+
+        .fccpc-header {
+          border-bottom: 3px solid #006837;
+        }
+
+        .container {
+          padding: 20px;
+        }
       }
     </style>
   </head>
   <body>
-    <a href="{{ url_for('program_dashboard') }}">← Back to Dashboard</a>
-
-    <h1>Database on Enforcement Operations</h1>
-
-    {% set e = report.enforcement_operation %}
-
-    <div class="section">
-      <p>
-        <span class="label">Sector Classification:</span> {{
-        e.sector_classification }}
-      </p>
-      <p><span class="label">Date Commenced:</span> {{ e.date_commenced }}</p>
-      <p><span class="label">Date Completed:</span> {{ e.date_completed }}</p>
-      <p><span class="label">Objectives:</span> {{ e.objectives or 'N/A' }}</p>
-      <p>
-        <span class="label">Location / Address:</span> {{ e.location_address }}
-      </p>
-      <p><span class="label">Action Taken:</span> {{ e.action_taken }}</p>
+    <!-- FCCPC Header -->
+    <div class="fccpc-header">
+      <div class="fccpc-logo-container">
+        <img
+          src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
+          alt="FCCPC Logo"
+          class="fccpc-logo"
+        />
+      </div>
+      <div class="fccpc-title">
+        Federal Competition & Consumer Protection Commission
+      </div>
+      <div class="fccpc-subtitle">Database on Enforcement Operations</div>
     </div>
 
-    <div class="section">
-      <h3>Items Seized</h3>
-      <p>
-        <span class="label">Description / Quantity:</span> {{
-        e.item_description_qty }}
-      </p>
-      <p><span class="label">Total Weight:</span> {{ e.total_weight }}</p>
-      <p><span class="label">Total Value (₦):</span> {{ e.total_value }}</p>
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <a
+        href="{{ url_for('program_dashboard') }}"
+        class="btn btn-secondary back-link"
+      >
+        ← Back to Dashboard
+      </a>
+      <button onclick="window.print()" class="btn btn-primary">
+        🖨️ Print / Save PDF
+      </button>
     </div>
 
-    <div class="section">
-      <p><span class="label">Remarks:</span> {{ e.remarks or 'None' }}</p>
-    </div>
+    <!-- Main Content -->
+    <div class="container">
+      <h1 class="report-title">Database on Enforcement Operations</h1>
 
-    <div class="section">
-      <p>
-        <span class="label">Submitted On:</span>
-        {{ report.date_created.strftime('%Y-%m-%d') }}
-      </p>
-      <p>
-        <span class="label">Submitted By:</span>
-        {{ report.agent.name }}
-      </p>
+      {% set e = report.enforcement_operation %}
+
+      <!-- Report Metadata -->
+      <div class="report-info">
+        <div class="info-item">
+          <span class="info-label">Submitted by:</span>
+          <span class="info-value">{{ report.agent.name }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Date Submitted:</span>
+          <span class="info-value"
+            >{{ report.date_created.strftime('%Y-%m-%d') }}</span
+          >
+        </div>
+        <div class="info-item">
+          <span class="info-label">Office:</span>
+          <span class="info-value">{{ report.agent.fccpc_office }}</span>
+        </div>
+      </div>
+
+      <!-- Operation Details -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th colspan="2">Enforcement Operation Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Sector Classification / Category</strong></td>
+            <td>{{ e.sector_classification }}</td>
+          </tr>
+          <tr>
+            <td><strong>Date Commenced</strong></td>
+            <td>{{ e.date_commenced }}</td>
+          </tr>
+          <tr>
+            <td><strong>Date Completed</strong></td>
+            <td>{{ e.date_completed }}</td>
+          </tr>
+          <tr>
+            <td><strong>Objectives / Target</strong></td>
+            <td>{{ e.objectives or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Location / Address</strong></td>
+            <td>{{ e.location_address }}</td>
+          </tr>
+          <tr>
+            <td><strong>Action Taken</strong></td>
+            <td>{{ e.action_taken }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Items Seized Section -->
+      <div class="section-header">Items Seized / Confiscated</div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Description / Quantity</strong></td>
+            <td>{{ e.item_description_qty }}</td>
+          </tr>
+          <tr>
+            <td><strong>Total Weight</strong></td>
+            <td>{{ e.total_weight }}</td>
+          </tr>
+          <tr>
+            <td><strong>Total Value (₦)</strong></td>
+            <td>
+              <strong style="font-size: 18px; color: #006837"
+                >{{ e.total_value }}</strong
+              >
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Remarks Section -->
+      <div class="section-header">Remarks</div>
+
+      <table class="data-table">
+        <tbody>
+          <tr>
+            <td>{{ e.remarks or 'None' }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </body>
 </html>

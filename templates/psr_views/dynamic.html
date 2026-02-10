@@ -1,109 +1,326 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <title>{{ config.title }}</title>
+    <meta charset="UTF-8" />
+    <title>{{ config.title }} - {{ config.code }}</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: Arial, Helvetica, sans-serif;
-        margin: 40px;
-        color: #000;
+        font-family: "Arial", sans-serif;
+        line-height: 1.6;
+        color: #333;
       }
 
-      .report-container {
-        max-width: 1000px;
-        margin: auto;
-      }
-
-      .report-header {
+      /* FCCPC Header */
+      .fccpc-header {
+        background: white;
+        border-bottom: 4px solid #006837;
+        padding: 20px 40px;
         text-align: center;
         margin-bottom: 30px;
       }
 
-      .report-header h1 {
-        margin: 0;
-        font-size: 26px;
+      .fccpc-logo {
+        max-width: 80px;
+        margin-bottom: 10px;
       }
 
-      .meta {
+      .fccpc-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #006837;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .fccpc-subtitle {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      /* Action Buttons */
+      .action-buttons {
+        padding: 0 40px 20px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background: #006837;
+        color: white;
+        font-size: 13px;
+      }
+
+      .btn-primary:hover {
+        background: #005028;
+      }
+
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+        font-size: 13px;
+      }
+
+      .btn-secondary:hover {
+        background: #5a6268;
+      }
+
+      /* Content Container */
+      .container {
+        padding: 0 40px 40px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      /* Report Title */
+      .report-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #006837;
         margin-bottom: 20px;
-        font-size: 14px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #006837;
       }
 
-      .meta strong {
-        display: inline-block;
-        width: 150px;
+      /* Report Info */
+      .report-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 25px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 10px;
       }
 
-      table {
+      .info-item {
+        display: flex;
+      }
+
+      .info-label {
+        font-weight: bold;
+        min-width: 150px;
+        color: #495057;
+      }
+
+      .info-value {
+        color: #212529;
+      }
+
+      /* Data Table */
+      .data-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 15px;
+        margin-bottom: 25px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         font-size: 14px;
       }
 
-      th,
-      td {
-        border: 1px solid #444;
-        padding: 8px;
+      .data-table th {
+        background: #006837;
+        color: white;
+        padding: 12px 8px;
         text-align: left;
+        font-weight: 600;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
       }
 
-      th {
-        background: #f0f0f0;
+      .data-table th:last-child {
+        border-right: none;
       }
 
-      .actions {
-        margin-bottom: 20px;
+      .data-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #dee2e6;
+        border-right: 1px solid #dee2e6;
       }
 
-      .actions button {
-        padding: 8px 14px;
-        border: none;
-        background: #2c3e50;
-        color: #fff;
-        cursor: pointer;
+      .data-table td:last-child {
+        border-right: none;
       }
 
-      .actions button:hover {
-        opacity: 0.9;
+      .data-table tbody tr:hover {
+        background: #f8f9fa;
       }
 
+      .data-table tbody tr:last-child td {
+        border-bottom: 2px solid #006837;
+      }
+
+      /* Empty State */
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+        font-style: italic;
+      }
+
+      /* Back Link */
+      .back-link {
+        display: inline-block;
+        padding: 8px 16px;
+        color: #006837;
+        text-decoration: none;
+        font-weight: 600;
+        margin-top: 20px;
+        border: 2px solid #006837;
+        border-radius: 5px;
+        transition: all 0.3s;
+      }
+
+      .back-link:hover {
+        background: #006837;
+        color: white;
+      }
+
+      /* Record Count */
+      .record-count {
+        background: #e8f5e9;
+        color: #2e7d32;
+        padding: 8px 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-weight: 600;
+        display: inline-block;
+      }
+
+      /* Print Styles */
       @media print {
-        .actions,
+        .action-buttons,
         .back-link {
-          display: none;
+          display: none !important;
         }
+
         body {
-          margin: 10px;
+          margin: 0;
+          padding: 0;
+        }
+
+        .fccpc-header {
+          border-bottom: 3px solid #006837;
+        }
+
+        .container {
+          padding: 20px;
+        }
+
+        .data-table {
+          font-size: 11px;
+        }
+
+        .data-table th,
+        .data-table td {
+          padding: 6px 4px;
+        }
+      }
+
+      /* Responsive Table */
+      @media screen and (max-width: 768px) {
+        .container {
+          padding: 0 20px 20px;
+        }
+
+        .data-table {
+          font-size: 12px;
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+
+        .report-info {
+          grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
   <body>
-    <div class="report-container">
-      <div class="actions">
-        <a href="{{ url_for('export_single_psr', report_id=report.id) }}">
-          <button>⬇ Export CSV</button>
-        </a>
-        <button onclick="window.print()">🖨 Print / Save PDF</button>
+    <!-- FCCPC Header -->
+    <div class="fccpc-header">
+      <div class="fccpc-logo-container">
+        <img
+          src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
+          alt="FCCPC Logo"
+          class="fccpc-logo"
+        />
       </div>
-
-      <div class="report-header">
-        <h1>{{ config.title }}</h1>
+      <div class="fccpc-title">
+        Federal Competition & Consumer Protection Commission
       </div>
+      <div class="fccpc-subtitle">{{ config.title }}</div>
+    </div>
 
-      <div class="meta">
-        <p><strong>Submitted by:</strong> {{ report.agent.name }}</p>
-        <p>
-          <strong>Date Submitted:</strong> {{
-          report.date_created.strftime('%Y-%m-%d') }}
-        </p>
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <a href="{{ url_for('program_dashboard') }}" class="btn btn-secondary">
+        ← Back to Dashboard
+      </a>
+      <a
+        href="{{ url_for('export_single_psr', report_id=report.id) }}"
+        class="btn btn-primary"
+      >
+        ⬇ Export CSV
+      </a>
+      <button onclick="window.print()" class="btn btn-primary">
+        🖨️ Print / Save PDF
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+      <h1 class="report-title">{{ config.title }}</h1>
+
+      <!-- Report Metadata -->
+      <div class="report-info">
+        <div class="info-item">
+          <span class="info-label">Submitted by:</span>
+          <span class="info-value">{{ report.agent.name }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Date Submitted:</span>
+          <span class="info-value"
+            >{{ report.date_created.strftime('%Y-%m-%d') }}</span
+          >
+        </div>
+        <div class="info-item">
+          <span class="info-label">Office:</span>
+          <span class="info-value">{{ report.agent.fccpc_office }}</span>
+        </div>
         {% if report.title %}
-        <p><strong>Report Title:</strong> {{ report.title }}</p>
+        <div class="info-item">
+          <span class="info-label">Report Title:</span>
+          <span class="info-value">{{ report.title }}</span>
+        </div>
         {% endif %}
       </div>
 
-      <table>
+      <!-- Record Count -->
+      {% if rows %}
+      <div class="record-count">📊 Total Records: {{ rows|length }}</div>
+      {% endif %}
+
+      <!-- Data Table -->
+      <table class="data-table">
         <thead>
           <tr>
             {% for field in config.fields %}
@@ -115,23 +332,22 @@
           {% for row in rows %}
           <tr>
             {% for field in config.fields %}
-            <td>{{ row.get(field.key, '') }}</td>
+            <td>{{ row.get(field.key, '-') }}</td>
             {% endfor %}
           </tr>
           {% else %}
           <tr>
-            <td colspan="{{ config.fields|length }}" style="text-align: center">
-              No records found.
+            <td colspan="{{ config.fields|length }}" class="empty-state">
+              No records found for this report.
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
 
-      <br />
-      <a class="back-link" href="{{ url_for('program_dashboard') }}"
-        >← Back to Dashboard</a
-      >
+      <a class="back-link" href="{{ url_for('program_dashboard') }}">
+        ← Back to Dashboard
+      </a>
     </div>
   </body>
 </html>

@@ -1,66 +1,284 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <title>Consumer Complaint – Resolved</title>
+    <meta charset="UTF-8" />
+    <title>Consumer Complaint - Resolved - PSR_05</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: Arial;
-        margin: 20px;
+        font-family: "Arial", sans-serif;
+        line-height: 1.6;
+        color: #333;
       }
-      .section {
-        border: 1px solid #ccc;
-        padding: 15px;
+
+      /* FCCPC Header */
+      .fccpc-header {
+        background: white;
+        border-bottom: 4px solid #006837;
+        padding: 20px 40px;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .fccpc-logo {
+        max-width: 80px;
+        margin-bottom: 10px;
+      }
+
+      .fccpc-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #006837;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .fccpc-subtitle {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      /* Action Buttons */
+      .action-buttons {
+        padding: 0 40px 20px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background: #006837;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #005028;
+      }
+
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #5a6268;
+      }
+
+      /* Content Container */
+      .container {
+        padding: 0 40px 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      /* Report Title */
+      .report-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #006837;
         margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #006837;
       }
-      h2 {
-        color: #28a745;
+
+      /* Data Table */
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
-      strong {
-        width: 220px;
-        display: inline-block;
+
+      .data-table th {
+        background: #006837;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
       }
-      pre {
+
+      .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .data-table tbody tr:hover {
+        background: #f8f9fa;
+      }
+
+      .data-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Section Headers */
+      .section-header {
+        background: #006837;
+        color: white;
+        padding: 10px 15px;
+        font-weight: bold;
+        margin-top: 25px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+      }
+
+      /* Text Content */
+      .text-content {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #006837;
+        margin-bottom: 20px;
         white-space: pre-wrap;
+        line-height: 1.8;
+      }
+
+      /* Print Styles */
+      @media print {
+        .action-buttons {
+          display: none !important;
+        }
+
+        .fccpc-header {
+          border-bottom: 3px solid #006837;
+        }
+
+        .container {
+          padding: 20px;
+        }
       }
     </style>
   </head>
   <body>
-    <a href="{{ url_for('program_dashboard') }}">← Back</a>
-
-    <h1>Consumer Complaint (Resolved / Closed)</h1>
-
-    <div class="section">
-      <p><strong>Case File No:</strong> {{ report.case_file_no }}</p>
-      <p>
-        <strong>Sector Classification:</strong> {{ report.sector_category }}
-      </p>
-      <p><strong>Date Received:</strong> {{ report.date_received }}</p>
-      <p>
-        <strong>Date of Resolution:</strong> {{ report.date_of_resolution }}
-      </p>
+    <!-- FCCPC Header -->
+    <div class="fccpc-header">
+      <div class="fccpc-logo-container">
+        <img
+          src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
+          alt="FCCPC Logo"
+          class="fccpc-logo"
+        />
+      </div>
+      <div class="fccpc-title">
+        Federal Competition & Consumer Protection Commission
+      </div>
+      <div class="fccpc-subtitle">Database on Complaints Resolved</div>
     </div>
 
-    <div class="section">
-      <h2>Complaint Details</h2>
-      <pre>{{ report.complaint_details }}</pre>
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <a href="{{ url_for('program_dashboard') }}" class="btn btn-secondary">
+        ← Back to Dashboard
+      </a>
+      <button onclick="window.print()" class="btn btn-primary">
+        🖨️ Print / Save PDF
+      </button>
     </div>
 
-    <div class="section">
-      <h2>Complainant Details</h2>
-      <pre>{{ report.complainant_details }}</pre>
-    </div>
+    <!-- Main Content -->
+    <div class="container">
+      <h1 class="report-title">Consumer Complaint (Resolved / Closed)</h1>
 
-    <div class="section">
-      <h2>Respondent Details</h2>
-      <pre>{{ report.respondent_details }}</pre>
-    </div>
+      <!-- Complaint Basic Information -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th colspan="2">Case Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Case File No.</strong></td>
+            <td>
+              <strong style="color: #006837; font-size: 16px"
+                >{{ report.case_file_no }}</strong
+              >
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Sector Classification / Category</strong></td>
+            <td>{{ report.sector_category }}</td>
+          </tr>
+          <tr>
+            <td><strong>Date Received</strong></td>
+            <td>{{ report.date_received.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+          <tr>
+            <td><strong>Date of Resolution</strong></td>
+            <td>
+              <strong style="color: #006837"
+                >{{ report.date_of_resolution.strftime('%Y-%m-%d') if
+                report.date_of_resolution else 'N/A' }}</strong
+              >
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Status</strong></td>
+            <td>
+              <span
+                style="
+                  background: #006837;
+                  color: white;
+                  padding: 4px 12px;
+                  border-radius: 4px;
+                  font-weight: bold;
+                "
+                >RESOLVED</span
+              >
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-    <div class="section">
-      <p><strong>Value / Remarks:</strong></p>
-      <pre>{{ report.value_of_complaint }}</pre>
+      <!-- Complaint Details -->
+      <div class="section-header">Complaint Details</div>
+      <div class="text-content">{{ report.complaint_details }}</div>
 
-      <p><strong>Complainant’s Remark:</strong></p>
-      <pre>{{ report.complainant_remark }}</pre>
+      <!-- Complainant Information -->
+      <div class="section-header">Complainant Details</div>
+      <div class="text-content">{{ report.complainant_details }}</div>
+
+      <!-- Respondent Information -->
+      <div class="section-header">Respondent Details</div>
+      <div class="text-content">{{ report.respondent_details }}</div>
+
+      <!-- Resolution Details -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th colspan="2">Resolution Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Value / Remarks</strong></td>
+            <td>{{ report.value_of_complaint or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Complainant's Remark</strong></td>
+            <td>{{ report.complainant_remark or 'No remarks provided' }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </body>
 </html>

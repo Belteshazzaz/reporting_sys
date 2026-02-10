@@ -2,8 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}FCCPC Portal{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
+    />
 
     <!-- CSS -->
     <link
@@ -22,78 +29,185 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
-  </head>
 
+    {% block extra_css %}{% endblock %}
+  </head>
   <body>
-    <!-- Top Bar -->
-    <nav class="navbar navbar-dark" style="background: #006837">
-      <div class="container-fluid">
-        <a class="navbar-brand d-flex align-items-center" href="#">
-          <img
-            src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
-            height="40"
-            class="me-2"
-          />
-          FCCPC Portal
-        </a>
+    {% if current_user.is_authenticated %}
+    <!-- Top Navigation Bar (Sticky Green Header) -->
+    <nav class="top-bar">
+      <div class="top-bar-brand">
+        <img
+          src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
+          alt="FCCPC Logo"
+        />
+        <span>FCCPC Portal</span>
+      </div>
+
+      <div class="top-bar-actions">
+        <div class="top-bar-user">
+          <i class="bi bi-person-circle"></i>
+          <span>{{ current_user.name }}</span>
+        </div>
+        <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+          <i class="bi bi-list"></i>
+        </button>
       </div>
     </nav>
 
-    <div class="d-flex">
-      {% if current_user.is_authenticated %}
-      <!-- Sidebar -->
-      <div class="sidebar">
-        <div class="mb-4">
-          <small class="text-muted">Logged in as</small><br />
-          <strong>{{ current_user.email }}</strong>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <!-- User Info -->
+      <div class="sidebar-user">
+        <div class="sidebar-user-label">Logged in as</div>
+        <div class="sidebar-user-name">{{ current_user.name }}</div>
+        <div class="sidebar-user-email">{{ current_user.email }}</div>
+        <div class="mt-2">
+          {% if current_user.role == 9 %}
+          <span class="badge badge-danger">Administrator</span>
+          {% elif current_user.role == 4 %}
+          <span class="badge badge-primary">EVC</span>
+          {% elif current_user.role == 3 %}
+          <span class="badge badge-info">Director</span>
+          {% elif current_user.role == 2 %}
+          <span class="badge badge-success">Supervisor</span>
+          {% else %}
+          <span class="badge badge-secondary">Agent</span>
+          {% endif %}
         </div>
+      </div>
 
-        <a href="{{ url_for('program_dashboard') }}" class="nav-link">
+      <!-- Main Navigation -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Main Menu</div>
+
+        <a
+          href="{{ url_for('program_dashboard') }}"
+          class="nav-link {% if request.endpoint == 'program_dashboard' %}active{% endif %}"
+        >
           <i class="bi bi-journal-text"></i>
-          Program Status (PSR)
+          <span>Program Status (PSR)</span>
         </a>
 
-        <a href="{{ url_for('dashboard') }}" class="nav-link">
-          <i class="bi bi-bar-chart"></i>
-          Price Reports
+        <a
+          href="{{ url_for('dashboard') }}"
+          class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
+        >
+          <i class="bi bi-graph-up"></i>
+          <span>Price Reports</span>
         </a>
 
-        <a href="{{ url_for('complaints_dashboard') }}" class="nav-link">
-          <i class="bi bi-chat-left-text"></i>
-          Complaints
-        </a>
+        <!-- REMOVED: Complaints menu item - now integrated into PSR dashboard -->
+      </div>
+
+      <!-- Admin Section -->
+      {% if current_user.is_admin() or current_user.is_evc() or
+      current_user.is_director() %}
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Management</div>
 
         {% if current_user.is_admin() %}
-        <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+        <a
+          href="{{ url_for('admin_dashboard') }}"
+          class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
+        >
           <i class="bi bi-shield-lock"></i>
-          Admin Portal
+          <span>Admin Portal</span>
         </a>
 
-        <a href="{{ url_for('audit_logs') }}" class="nav-link">
+        <a
+          href="{{ url_for('audit_logs') }}"
+          class="nav-link {% if request.endpoint == 'audit_logs' %}active{% endif %}"
+        >
           <i class="bi bi-clock-history"></i>
-          Audit Logs
+          <span>Audit Logs</span>
+        </a>
+        {% endif %} {% if current_user.is_evc() %}
+        <a href="#" class="nav-link">
+          <i class="bi bi-speedometer2"></i>
+          <span>EVC Dashboard</span>
+        </a>
+        {% endif %} {% if current_user.is_director() %}
+        <a href="#" class="nav-link">
+          <i class="bi bi-bar-chart-line"></i>
+          <span>Director Analytics</span>
         </a>
         {% endif %}
-
-        <div class="mt-auto">
-          <a href="{{ url_for('logout') }}" class="nav-link text-danger">
-            <i class="bi bi-box-arrow-right"></i>
-            Logout
-          </a>
-        </div>
       </div>
       {% endif %}
 
-      <!-- Main Content -->
-      <div class="main-content p-4 w-100">
-        {% block content %}{% endblock %}
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="nav-link danger">
+          <i class="bi bi-box-arrow-right"></i>
+          <span>Logout</span>
+        </a>
       </div>
-    </div>
+    </aside>
+    {% endif %}
 
-    <!-- JS -->
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="alerts-container">
+        {% for category, message in messages %}
+        <div
+          class="alert alert-{{ category if category != 'error' else 'danger' }}"
+        >
+          <i
+            class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'warning' %}exclamation-triangle{% elif category == 'danger' or category == 'error' %}x-circle{% else %}info-circle{% endif %}"
+          ></i>
+          <div>{{ message }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
+
+      <!-- Page Content -->
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- JavaScript -->
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
-    {% block scripts %}{% endblock %}
+    <script>
+      // Mobile sidebar toggle
+      function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        sidebar.classList.toggle("show");
+      }
+
+      // Close sidebar when clicking outside on mobile
+      document.addEventListener("click", function (event) {
+        const sidebar = document.getElementById("sidebar");
+        const toggle = document.querySelector(".mobile-menu-toggle");
+
+        if (window.innerWidth <= 768 && sidebar && toggle) {
+          if (
+            !sidebar.contains(event.target) &&
+            !toggle.contains(event.target)
+          ) {
+            sidebar.classList.remove("show");
+          }
+        }
+      });
+
+      // Auto-dismiss alerts after 5 seconds
+      setTimeout(function () {
+        const alerts = document.querySelectorAll(".alert");
+        alerts.forEach(function (alert) {
+          alert.style.transition = "opacity 0.5s";
+          alert.style.opacity = "0";
+          setTimeout(function () {
+            alert.remove();
+          }, 500);
+        });
+      }, 5000);
+    </script>
+
+    {% block extra_js %}{% endblock %}
   </body>
 </html>

@@ -1,83 +1,322 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Progress Report</title>
+    <title>Progress Report - PSR_01</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
+        font-family: "Arial", sans-serif;
         line-height: 1.6;
+        color: #333;
       }
-      h1 {
-        color: #343a40;
+
+      /* FCCPC Header */
+      .fccpc-header {
+        background: white;
+        border-bottom: 4px solid #006837;
+        padding: 20px 40px;
+        text-align: center;
+        margin-bottom: 30px;
       }
-      h2 {
-        margin-top: 30px;
-        color: #007bff;
-        border-bottom: 1px solid #007bff;
-        padding-bottom: 5px;
+
+      .fccpc-logo {
+        max-width: 80px;
+        margin-bottom: 10px;
       }
-      .section {
-        margin-bottom: 25px;
+
+      .fccpc-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #006837;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .fccpc-subtitle {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      /* Action Buttons */
+      .action-buttons {
+        padding: 0 40px 20px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background: #006837;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #005028;
+      }
+
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #5a6268;
+      }
+
+      /* Content Container */
+      .container {
+        padding: 0 40px 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      /* Report Title */
+      .report-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #006837;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #006837;
+      }
+
+      /* Report Info */
+      .report-info {
+        background: #f8f9fa;
         padding: 15px;
-        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 25px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .info-item {
+        display: flex;
+      }
+
+      .info-label {
+        font-weight: bold;
+        min-width: 180px;
+        color: #495057;
+      }
+
+      .info-value {
+        color: #212529;
+      }
+
+      /* Data Table */
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .data-table th {
+        background: #006837;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+      }
+
+      .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .data-table tbody tr:hover {
+        background: #f8f9fa;
+      }
+
+      .data-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Section Headers */
+      .section-header {
+        background: #006837;
+        color: white;
+        padding: 10px 15px;
+        font-weight: bold;
+        margin-top: 25px;
+        margin-bottom: 15px;
         border-radius: 5px;
       }
-      .label {
-        font-weight: bold;
-        width: 240px;
-        display: inline-block;
-      }
-      pre {
+
+      /* Text Content */
+      .text-content {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #006837;
+        margin-bottom: 20px;
         white-space: pre-wrap;
-        font-family: inherit;
+        line-height: 1.8;
+      }
+
+      /* Back Link */
+      .back-link {
+        display: inline-block;
+        padding: 8px 16px;
+        color: #006837;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 20px;
+        border: 2px solid #006837;
+        border-radius: 5px;
+        transition: all 0.3s;
+      }
+
+      .back-link:hover {
+        background: #006837;
+        color: white;
+      }
+
+      /* Print Styles */
+      @media print {
+        .action-buttons,
+        .back-link {
+          display: none !important;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+        }
+
+        .fccpc-header {
+          border-bottom: 3px solid #006837;
+        }
+
+        .container {
+          padding: 20px;
+        }
       }
     </style>
   </head>
   <body>
-    <a href="{{ url_for('program_dashboard') }}">← Back to Dashboard</a>
-
-    <h1>Progress Report</h1>
-
-    <div class="section">
-      <p>
-        <span class="label">Project / Programme Title:</span> {{ report.title }}
-      </p>
-      <p>
-        <span class="label">Period Covered:</span> {{ report.period_covered }}
-      </p>
-      <p><span class="label">Objectives:</span> {{ report.objective }}</p>
-      <p><span class="label">Date Started:</span> {{ report.date_started }}</p>
-      <p>
-        <span class="label">Previous Status (%):</span> {{
-        report.previous_status_percentage }}%
-      </p>
-      <p>
-        <span class="label">Present Status (%):</span> {{
-        report.status_percentage }}%
-      </p>
-      <p>
-        <span class="label">Date Submitted:</span>
-        {{ report.date_created.strftime('%Y-%m-%d') }}
-      </p>
-      <p>
-        <span class="label">Submitted By:</span>
-        {{ report.agent.name }}
-      </p>
+    <!-- FCCPC Header -->
+    <div class="fccpc-header">
+      <div class="fccpc-logo-container">
+        <img
+          src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
+          alt="FCCPC Logo"
+          class="fccpc-logo"
+        />
+      </div>
+      <div class="fccpc-title">
+        Federal Competition & Consumer Protection Commission
+      </div>
+      <div class="fccpc-subtitle">Program Status Report</div>
     </div>
 
-    <h2>Details of Present Achievement</h2>
-    <div class="section">
-      <pre>{{ report.status_details }}</pre>
-    </div>
-
-    <h2>Constraints / Requirements</h2>
-    <div class="section">
-      <pre>
-{{ report.constraints_requirements if report.constraints_requirements else 'None reported.' }}
-  </pre
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <a
+        href="{{ url_for('program_dashboard') }}"
+        class="btn btn-secondary back-link"
       >
+        ← Back to Dashboard
+      </a>
+      <button onclick="window.print()" class="btn btn-primary">
+        🖨️ Print / Save PDF
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+      <h1 class="report-title">Presentation of Progress Report</h1>
+
+      <!-- Report Metadata -->
+      <div class="report-info">
+        <div class="info-item">
+          <span class="info-label">Submitted by:</span>
+          <span class="info-value">{{ report.agent.name }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Date Submitted:</span>
+          <span class="info-value"
+            >{{ report.date_created.strftime('%Y-%m-%d') }}</span
+          >
+        </div>
+        <div class="info-item">
+          <span class="info-label">Office:</span>
+          <span class="info-value">{{ report.agent.fccpc_office }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Report Title:</span>
+          <span class="info-value">{{ report.title }}</span>
+        </div>
+      </div>
+
+      <!-- Project Details Table -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th colspan="2">Project / Programme Information</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Project / Programme Title</strong></td>
+            <td>{{ report.title }}</td>
+          </tr>
+          <tr>
+            <td><strong>Period Covered</strong></td>
+            <td>{{ report.period_covered }}</td>
+          </tr>
+          <tr>
+            <td><strong>Objectives</strong></td>
+            <td>{{ report.objective }}</td>
+          </tr>
+          <tr>
+            <td><strong>Date Started</strong></td>
+            <td>{{ report.date_started }}</td>
+          </tr>
+          <tr>
+            <td><strong>Previous Status (%)</strong></td>
+            <td>{{ report.previous_status_percentage }}%</td>
+          </tr>
+          <tr>
+            <td><strong>Present Status (%)</strong></td>
+            <td>{{ report.status_percentage }}%</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Part A: Details of Present Achievement -->
+      <div class="section-header">Part A: Details of Present Achievement</div>
+      <div class="text-content">{{ report.status_details }}</div>
+
+      <!-- Part B: Constraints / Requirements -->
+      <div class="section-header">Part B: Constraints / Requirements</div>
+      <div class="text-content">
+        {{ report.constraints_requirements if report.constraints_requirements
+        else 'None reported.' }}
+      </div>
     </div>
   </body>
 </html>
