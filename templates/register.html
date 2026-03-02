@@ -1,45 +1,282 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Sign Up</title>
-  </head>
-  <body>
-    <h1>Register New Field Agent</h1>
+{% extends "base.html" %} {% block title %}Register - FCCPC Portal{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white text-center">
+          <h3 class="mb-0">
+            <i class="bi bi-person-plus-fill"></i>
+            Register New Staff
+          </h3>
+        </div>
 
-    <form method="POST">
-      <div>
-        <label for="name">Full Name:</label
-        ><input type="text" name="name" required />
-      </div>
-      <div>
-        <label for="sex">Sex:</label>
-        <select name="sex" required>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select>
-      </div>
-      <div>
-        <label for="fccpc_office">FCCPC Office Location:</label>
-        <select name="fccpc_office" required>
-          <option value="" disabled selected>-- Select State --</option>
-          {% for state in states %}
-          <option value="{{ state }}">{{ state }}</option>
-          {% endfor %}
-        </select>
+        <div class="card-body p-4">
+          <!-- Registration restricted notice (if applicable) -->
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ category }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+            ></button>
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+
+          <form method="POST" id="registerForm">
+            <!-- Full Name -->
+            <div class="mb-3">
+              <label for="name" class="form-label">
+                <i class="bi bi-person"></i> Full Name
+                <span class="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                name="name"
+                placeholder="Enter full name"
+                required
+                autofocus
+              />
+            </div>
+
+            <!-- Sex -->
+            <div class="mb-3">
+              <label for="sex" class="form-label">
+                <i class="bi bi-gender-ambiguous"></i> Sex
+                <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="sex" name="sex" required>
+                <option value="" disabled selected>-- Select Sex --</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <!-- FCCPC Office -->
+            <div class="mb-3">
+              <label for="fccpc_office" class="form-label">
+                <i class="bi bi-building"></i> FCCPC Office Location
+                <span class="text-danger">*</span>
+              </label>
+              <select
+                class="form-select"
+                id="fccpc_office"
+                name="fccpc_office"
+                required
+              >
+                <option value="" disabled selected>
+                  -- Select State/Office --
+                </option>
+                {% for state in states %}
+                <option value="{{ state }}">{{ state }}</option>
+                {% endfor %}
+              </select>
+              <small class="text-muted"
+                >Select your assigned office location</small
+              >
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+              <label for="email" class="form-label">
+                <i class="bi bi-envelope"></i> Official Email Address
+                <span class="text-danger">*</span>
+              </label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                placeholder="example@fccpc.gov.ng"
+                required
+              />
+              <small class="text-muted"
+                >Use your official FCCPC email address</small
+              >
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+              <label for="password" class="form-label">
+                <i class="bi bi-lock"></i> Password
+                <span class="text-danger">*</span>
+              </label>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                placeholder="Create a strong password"
+                minlength="8"
+                required
+              />
+              <small class="text-muted">Minimum 8 characters</small>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="mb-4">
+              <label for="confirm_password" class="form-label">
+                <i class="bi bi-lock-fill"></i> Confirm Password
+                <span class="text-danger">*</span>
+              </label>
+              <input
+                type="password"
+                class="form-control"
+                id="confirm_password"
+                name="confirm_password"
+                placeholder="Re-enter your password"
+                minlength="8"
+                required
+              />
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-person-check"></i> Create Account
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card-footer text-center bg-light">
+          <p class="mb-0">
+            Already have an account?
+            <a href="{{ url_for('login') }}" class="text-primary fw-bold">
+              <i class="bi bi-box-arrow-in-right"></i> Sign In
+            </a>
+          </p>
+        </div>
       </div>
 
-      <div>
-        <label for="email">Email Address:</label
-        ><input type="email" name="email" required />
+      <!-- Info Notice -->
+      <div class="alert alert-info mt-3" role="alert">
+        <i class="bi bi-info-circle-fill"></i>
+        <strong>Note:</strong> Registration is restricted. Contact your
+        administrator if you need access.
       </div>
-      <div>
-        <label for="password">Password:</label
-        ><input type="password" name="password" required />
-      </div>
+    </div>
+  </div>
+</div>
 
-      <button type="submit">Sign Up</button>
-    </form>
-    <p>Already have an account? <a href="{{ url_for('login') }}">Sign In</a></p>
-  </body>
-</html>
+<style>
+  /* Additional styling for register page */
+  .card {
+    border-radius: 15px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 1.5rem;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control,
+  .form-select {
+    border-radius: 8px;
+    border: 1px solid #dce4ec;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+  }
+
+  .text-danger {
+    color: #dc3545 !important;
+  }
+
+  small.text-muted {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  .card-footer {
+    padding: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .alert-info {
+    border-radius: 10px;
+    border-left: 4px solid #0dcaf0;
+  }
+</style>
+
+<script>
+  // Client-side form validation
+  document
+    .getElementById("registerForm")
+    .addEventListener("submit", function (e) {
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirm_password").value;
+
+      // Check if passwords match
+      if (password !== confirmPassword) {
+        e.preventDefault();
+        alert("Passwords do not match! Please check and try again.");
+        document.getElementById("confirm_password").focus();
+        return false;
+      }
+
+      // Check password length
+      if (password.length < 8) {
+        e.preventDefault();
+        alert("Password must be at least 8 characters long!");
+        document.getElementById("password").focus();
+        return false;
+      }
+
+      return true;
+    });
+
+  // Real-time password match indicator
+  document
+    .getElementById("confirm_password")
+    .addEventListener("input", function () {
+      const password = document.getElementById("password").value;
+      const confirmPassword = this.value;
+
+      if (confirmPassword.length > 0) {
+        if (password === confirmPassword) {
+          this.classList.remove("is-invalid");
+          this.classList.add("is-valid");
+        } else {
+          this.classList.remove("is-valid");
+          this.classList.add("is-invalid");
+        }
+      } else {
+        this.classList.remove("is-valid", "is-invalid");
+      }
+    });
+</script>
+{% endblock %}

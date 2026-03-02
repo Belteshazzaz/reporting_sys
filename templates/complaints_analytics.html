@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Complaints Analytics - FCCPC Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="bi bi-graph-up"></i> 
+                Consumer Complaints Analytics
+            </h2>
+            <p class="text-muted">Comprehensive analysis of complaint patterns and trends</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('export_complaints_analytics') }}" class="btn btn-success">
+                <i class="bi bi-download"></i> Export to CSV
+            </a>
+            <a href="{{ url_for('program_dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Total Complaints</h6>
+                    <h2>{{ analytics.total_complaints }}</h2>
+                    <small>All time</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Resolved</h6>
+                    <h2>{{ analytics.status_counts.get('RESOLVED', 0) }}</h2>
+                    <small>
+                        {% if analytics.total_complaints > 0 %}
+                        {{ (analytics.status_counts.get('RESOLVED', 0) / analytics.total_complaints * 100) | round(1) }}% of total
+                        {% else %}
+                        0% of total
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Ongoing</h6>
+                    <h2>{{ analytics.status_counts.get('ONGOING', 0) }}</h2>
+                    <small>
+                        {% if analytics.total_complaints > 0 %}
+                        {{ (analytics.status_counts.get('ONGOING', 0) / analytics.total_complaints * 100) | round(1) }}% of total
+                        {% else %}
+                        0% of total
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">Received</h6>
+                    <h2>{{ analytics.status_counts.get('RECEIVED', 0) }}</h2>
+                    <small>
+                        {% if analytics.total_complaints > 0 %}
+                        {{ (analytics.status_counts.get('RECEIVED', 0) / analytics.total_complaints * 100) | round(1) }}% of total
+                        {% else %}
+                        0% of total
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <!-- Top Companies Chart -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-building"></i> 
+                        Top 15 Companies by Complaint Count
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analytics.companies_chart %}
+                    <div id="companiesChart"></div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        No complaint data available yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Pie Chart -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pie-chart"></i> 
+                        Complaints by Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="statusChart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Trend Chart -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up-arrow"></i> 
+                        Complaint Trend (Last 12 Months)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="monthChart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Respondents Table -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-table"></i> 
+                        Top Companies/Organizations (Detailed View)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analytics.top_respondents %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="10%">Rank</th>
+                                    <th width="60%">Company/Organization</th>
+                                    <th width="15%">Complaints</th>
+                                    <th width="15%">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for respondent, count in analytics.top_respondents %}
+                                <tr>
+                                    <td>
+                                        {% if loop.index <= 3 %}
+                                        <span class="badge bg-warning">{{ loop.index }}</span>
+                                        {% else %}
+                                        {{ loop.index }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ respondent }}</td>
+                                    <td>
+                                        <strong>{{ count }}</strong>
+                                    </td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-danger" 
+                                                 role="progressbar" 
+                                                 style="width: {{ (count / analytics.total_complaints * 100) | round(1) }}%"
+                                                 aria-valuenow="{{ count }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="{{ analytics.total_complaints }}">
+                                                {{ (count / analytics.total_complaints * 100) | round(1) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        No complaints data available yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sector Breakdown -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-briefcase"></i> 
+                        Complaints by Sector/Category
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analytics.sector_counts %}
+                    <div class="row">
+                        {% for sector, count in analytics.sector_counts.items() %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-secondary">
+                                <div class="card-body">
+                                    <h6>{{ sector }}</h6>
+                                    <h3>{{ count }}</h3>
+                                    <small class="text-muted">
+                                        {{ (count / analytics.total_complaints * 100) | round(1) }}% of total
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        No sector data available yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Plotly Charts -->
+{% if analytics.companies_chart %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    // Top Companies Chart
+    var companiesData = {{ analytics.companies_chart | safe }};
+    Plotly.newPlot('companiesChart', companiesData.data, companiesData.layout, {responsive: true});
+    
+    // Status Chart
+    var statusData = {{ analytics.status_chart | safe }};
+    Plotly.newPlot('statusChart', statusData.data, statusData.layout, {responsive: true});
+    
+    // Monthly Trend Chart
+    var monthData = {{ analytics.month_chart | safe }};
+    Plotly.newPlot('monthChart', monthData.data, monthData.layout, {responsive: true});
+</script>
+{% endif %}
+
+{% endblock %}

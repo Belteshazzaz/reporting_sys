@@ -241,6 +241,17 @@
     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
   }
 
+  .btn-outline {
+    background: white;
+    border: 2px solid var(--primary-green);
+    color: var(--primary-green);
+  }
+
+  .btn-outline:hover {
+    background: var(--primary-green);
+    color: white;
+  }
+
   /* Hidden State */
   .hidden {
     display: none !important;
@@ -740,16 +751,55 @@
             <textarea name="objective" class="form-control" rows="4"></textarea>
           </div>
 
+          <!-- ✅ PHASE 1: Updated Date Fields Row -->
           <div class="row">
             <div class="col-md-6 form-group">
               <label class="form-label">Date Started</label>
-              <input type="date" name="date_started" class="form-control" />
+              <input
+                type="date"
+                name="date_started"
+                id="date_started"
+                class="form-control"
+              />
             </div>
+            <div class="col-md-6 form-group">
+              <label class="form-label">
+                Date Ended
+                <span class="text-muted" style="font-weight: 400"
+                  >(Optional)</span
+                >
+              </label>
+              <input
+                type="date"
+                name="date_ended"
+                id="date_ended"
+                class="form-control"
+              />
+              <small class="form-help">
+                Leave blank if the project is still ongoing
+              </small>
+            </div>
+          </div>
+
+          <!-- ✅ PHASE 1: Status Percentages Row -->
+          <div class="row">
             <div class="col-md-6 form-group">
               <label class="form-label">Previous Status (%)</label>
               <input
                 type="number"
                 name="previous_status_percentage"
+                class="form-control"
+                min="0"
+                max="100"
+                value="0"
+              />
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="form-label">Present Status (%)</label>
+              <input
+                type="number"
+                id="status_percentage"
+                name="status_percentage"
                 class="form-control"
                 min="0"
                 max="100"
@@ -775,19 +825,6 @@
               class="form-control"
               rows="4"
             ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Present Status (%)</label>
-            <input
-              type="number"
-              id="status_percentage"
-              name="status_percentage"
-              class="form-control"
-              min="0"
-              max="100"
-              value="0"
-            />
           </div>
         </div>
 
@@ -1018,6 +1055,33 @@
       }
     });
   }
+
+  // ✅ PHASE 1: Date validation - ensure date_ended >= date_started
+  document.addEventListener('DOMContentLoaded', function() {
+    const dateStarted = document.getElementById('date_started');
+    const dateEnded = document.getElementById('date_ended');
+
+    if (dateStarted && dateEnded) {
+      // Update min date for date_ended when date_started changes
+      dateStarted.addEventListener('change', function() {
+        dateEnded.min = this.value;
+
+        // Clear date_ended if it's now before date_started
+        if (dateEnded.value && dateEnded.value < this.value) {
+          dateEnded.value = '';
+          alert('Date Ended must be on or after Date Started');
+        }
+      });
+
+      // Validate when date_ended changes
+      dateEnded.addEventListener('change', function() {
+        if (dateStarted.value && this.value && this.value < dateStarted.value) {
+          this.value = '';
+          alert('Date Ended must be on or after Date Started');
+        }
+      });
+    }
+  });
 
   // Form submission with loading state
   document.getElementById('reportForm').addEventListener('submit', function(e) {
