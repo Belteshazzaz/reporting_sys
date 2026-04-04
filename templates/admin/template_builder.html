@@ -1,0 +1,1016 @@
+{% extends "base.html" %}
+{% block title %}
+  {% if page == 'list' %}Custom Templates{% elif page == 'edit' %}Edit Template{% else %}New Template{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Layout ── */
+  .tb-page { max-width: 1100px; margin: 0 auto; padding: 0 0 60px; }
+
+  .tb-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid #e9ecef;
+  }
+
+  .tb-page-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #006837;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ── Buttons ── */
+  .btn-tb {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-tb-primary   { background: #006837; color: white; }
+  .btn-tb-primary:hover  { background: #005028; color: white; }
+  .btn-tb-outline   { background: white; border: 2px solid #006837; color: #006837; }
+  .btn-tb-outline:hover  { background: #006837; color: white; }
+  .btn-tb-danger    { background: #dc3545; color: white; }
+  .btn-tb-danger:hover   { background: #b02a37; }
+  .btn-tb-warning   { background: #ffc107; color: #212529; }
+  .btn-tb-warning:hover  { background: #e0a800; }
+  .btn-tb-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
+
+  /* ── Template List ── */
+  .template-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .template-card {
+    background: white;
+    border: 1.5px solid #dee2e6;
+    border-radius: 12px;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .template-card:hover { border-color: #006837; box-shadow: 0 4px 16px rgba(0,104,55,0.1); }
+  .template-card.inactive { opacity: 0.6; }
+
+  .tc-icon {
+    width: 46px; height: 46px;
+    background: #e8f5e9;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .tc-icon.inactive { background: #f8f9fa; }
+
+  .tc-info { flex: 1; }
+  .tc-name { font-weight: 800; font-size: 15px; color: #212529; }
+  .tc-meta { font-size: 12px; color: #6c757d; margin-top: 3px; }
+
+  .tc-badge {
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+  }
+  .tc-badge-active   { background: #e8f5e9; color: #006837; }
+  .tc-badge-inactive { background: #f8f9fa; color: #6c757d; }
+  .tc-badge-code     { background: #e3f2fd; color: #0d6efd; }
+
+  .tc-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+  }
+  .empty-state i { font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6; }
+
+  /* ── Builder Form ── */
+  .builder-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .builder-layout { grid-template-columns: 1fr; }
+  }
+
+  .builder-panel {
+    background: white;
+    border: 1.5px solid #dee2e6;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    background: #006837;
+    color: white;
+    padding: 14px 18px;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-body { padding: 18px; }
+
+  .form-group-tb { margin-bottom: 16px; }
+  .form-label-tb {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #495057;
+    margin-bottom: 5px;
+  }
+  .form-label-tb .req { color: #dc3545; margin-left: 2px; }
+
+  .form-control-tb {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #dee2e6;
+    border-radius: 7px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    background: white;
+  }
+  .form-control-tb:focus {
+    outline: none;
+    border-color: #006837;
+    box-shadow: 0 0 0 3px rgba(0,104,55,0.08);
+  }
+
+  .category-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 4px;
+  }
+  .category-chip {
+    padding: 5px 12px;
+    border: 1.5px solid #dee2e6;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: white;
+    color: #495057;
+  }
+  .category-chip.active, .category-chip:hover {
+    background: #006837;
+    border-color: #006837;
+    color: white;
+  }
+
+  /* ── Field Builder ── */
+  .fields-list { min-height: 80px; }
+
+  .field-item {
+    background: #f8f9fa;
+    border: 1.5px solid #dee2e6;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: grab;
+  }
+  .field-item:active { cursor: grabbing; }
+  .field-item.dragging {
+    opacity: 0.5;
+    border-color: #006837;
+    box-shadow: 0 4px 12px rgba(0,104,55,0.2);
+  }
+  .field-item.drag-over { border-color: #006837; background: #f0f9f4; }
+
+  .field-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+
+  .drag-handle {
+    color: #adb5bd;
+    font-size: 16px;
+    cursor: grab;
+    flex-shrink: 0;
+  }
+
+  .field-label-preview {
+    flex: 1;
+    font-weight: 600;
+    font-size: 13px;
+    color: #212529;
+  }
+  .field-label-preview.empty { color: #adb5bd; font-style: italic; }
+
+  .field-type-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e3f2fd;
+    color: #0d6efd;
+    flex-shrink: 0;
+  }
+
+  .field-required-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #fdecea;
+    color: #dc3545;
+    flex-shrink: 0;
+  }
+
+  .btn-remove-field {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 2px;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+  .btn-remove-field:hover { opacity: 1; }
+
+  .field-body {
+    padding: 0 12px 12px;
+    display: none;
+  }
+  .field-body.open { display: block; }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .field-row.full { grid-template-columns: 1fr; }
+
+  .field-input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1.5px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus { outline: none; border-color: #006837; }
+
+  .field-select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1.5px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+  }
+
+  .field-label-sm {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6c757d;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .toggle-required {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-required input { display: none; }
+  .toggle-track {
+    width: 36px; height: 20px;
+    background: #dee2e6;
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: white;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-required input:checked + .toggle-track { background: #006837; }
+  .toggle-required input:checked + .toggle-track::after { transform: translateX(16px); }
+
+  /* Dropdown options editor */
+  .options-editor { margin-top: 8px; }
+  .option-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+  .option-row input {
+    flex: 1;
+    padding: 6px 9px;
+    border: 1.5px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .option-row input:focus { outline: none; border-color: #006837; }
+  .btn-remove-option {
+    background: none; border: none;
+    color: #dc3545; cursor: pointer;
+    font-size: 15px; padding: 0 3px;
+  }
+  .btn-add-option {
+    font-size: 12px; font-weight: 700;
+    color: #006837; background: none;
+    border: 1.5px dashed #006837;
+    padding: 5px 12px; border-radius: 6px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-add-option:hover { background: #006837; color: white; }
+
+  .btn-add-field {
+    width: 100%;
+    padding: 10px;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    background: white;
+    color: #006837;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .btn-add-field:hover { border-color: #006837; background: #f0f9f4; }
+
+  /* ── Live Preview ── */
+  .preview-panel {
+    background: white;
+    border: 1.5px solid #dee2e6;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+
+  .preview-row {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .preview-field-group { }
+  .preview-field-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #495057;
+    margin-bottom: 5px;
+  }
+  .preview-field-label .req-star { color: #dc3545; }
+  .preview-field-input {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1.5px solid #dee2e6;
+    border-radius: 7px;
+    font-size: 13px;
+    background: #f8f9fa;
+    color: #adb5bd;
+    pointer-events: none;
+  }
+  .preview-empty {
+    text-align: center;
+    padding: 20px;
+    color: #adb5bd;
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  /* ── Save Bar ── */
+  .save-bar {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-top: 2px solid #e9ecef;
+    padding: 14px 0;
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    z-index: 100;
+  }
+
+  .save-status {
+    font-size: 13px;
+    color: #6c757d;
+    margin-left: auto;
+  }
+  .save-status.success { color: #006837; font-weight: 600; }
+  .save-status.error   { color: #dc3545; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tb-page">
+
+  {# ═══════════════════ LIST PAGE ═══════════════════ #}
+  {% if page == 'list' %}
+
+  <div class="tb-topbar">
+    <div class="tb-page-title">
+      <i class="bi bi-puzzle-fill"></i> Custom Report Templates
+    </div>
+    <a href="{{ url_for('custom_template_new') }}" class="btn-tb btn-tb-primary">
+      <i class="bi bi-plus-lg"></i> New Template
+    </a>
+  </div>
+
+  {% if templates %}
+  <div class="template-grid">
+    {% for ct in templates %}
+    <div class="template-card {% if not ct.is_active %}inactive{% endif %}">
+      <div class="tc-icon {% if not ct.is_active %}inactive{% endif %}">
+        {% if ct.is_active %}📋{% else %}🔒{% endif %}
+      </div>
+      <div class="tc-info">
+        <div class="tc-name">{{ ct.name }}</div>
+        <div class="tc-meta">
+          <span class="tc-badge tc-badge-code">{{ ct.code }}</span>
+          &nbsp;
+          <span class="tc-badge {% if ct.is_active %}tc-badge-active{% else %}tc-badge-inactive{% endif %}">
+            {{ 'Active' if ct.is_active else 'Inactive' }}
+          </span>
+          &nbsp;
+          {{ ct.fields|length }} field(s) &nbsp;·&nbsp;
+          {{ ct.report_count }} report(s) &nbsp;·&nbsp;
+          Category: {{ ct.category }} &nbsp;·&nbsp;
+          Created: {{ ct.created_at.strftime('%d %b %Y') }}
+        </div>
+      </div>
+      <div class="tc-actions">
+        <a href="{{ url_for('custom_template_edit', template_id=ct.id) }}"
+           class="btn-tb btn-tb-outline btn-tb-sm">
+          <i class="bi bi-pencil"></i> Edit
+        </a>
+        <form method="POST" action="{{ url_for('custom_template_toggle', template_id=ct.id) }}" style="display:inline">
+          <button type="submit" class="btn-tb btn-tb-warning btn-tb-sm">
+            {{ '🔒 Deactivate' if ct.is_active else '✓ Activate' }}
+          </button>
+        </form>
+        <form method="POST" action="{{ url_for('custom_template_delete', template_id=ct.id) }}"
+              style="display:inline"
+              onsubmit="return confirm('Delete \'{{ ct.name }}\'? This cannot be undone.')">
+          <button type="submit" class="btn-tb btn-tb-danger btn-tb-sm"
+                  {% if ct.report_count > 0 %}disabled title="{{ ct.report_count }} report(s) exist — deactivate instead"{% endif %}>
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-puzzle"></i>
+    <strong style="font-size:16px; display:block; margin-bottom:8px;">No custom templates yet</strong>
+    <p style="margin-bottom:20px;">Create your first custom report template to extend the PSR system.</p>
+    <a href="{{ url_for('custom_template_new') }}" class="btn-tb btn-tb-primary">
+      <i class="bi bi-plus-lg"></i> Create First Template
+    </a>
+  </div>
+  {% endif %}
+
+  {# ═══════════════════ NEW / EDIT PAGE ═══════════════════ #}
+  {% else %}
+
+  <div class="tb-topbar">
+    <div class="tb-page-title">
+      <i class="bi bi-{% if page == 'edit' %}pencil-square{% else %}plus-square-fill{% endif %}"></i>
+      {% if page == 'edit' %}Edit Template: {{ ct.name }}{% else %}New Custom Template{% endif %}
+    </div>
+    <a href="{{ url_for('custom_templates_list') }}" class="btn-tb btn-tb-outline">
+      <i class="bi bi-arrow-left"></i> Back to Templates
+    </a>
+  </div>
+
+  <div class="builder-layout">
+
+    <!-- LEFT: Metadata panel -->
+    <div>
+      <div class="builder-panel">
+        <div class="panel-header">
+          <i class="bi bi-info-circle"></i> Template Details
+        </div>
+        <div class="panel-body">
+
+          <div class="form-group-tb">
+            <label class="form-label-tb">Template Name <span class="req">*</span></label>
+            <input type="text" id="tpl_name" class="form-control-tb"
+                   placeholder="e.g. Database on Court Cases II"
+                   oninput="syncPreview()" />
+          </div>
+
+          <div class="form-group-tb">
+            <label class="form-label-tb">Template Code <span class="req">*</span></label>
+            <input type="text" id="tpl_code" class="form-control-tb"
+                   placeholder="e.g. PSR_21"
+                   style="text-transform:uppercase"
+                   oninput="this.value=this.value.toUpperCase()" />
+          </div>
+
+          <div class="form-group-tb">
+            <label class="form-label-tb">Category</label>
+            <div class="category-chips" id="categoryChips">
+              {% for cat in ['custom','enforcement','surveillance','outreach','legal','quality','partners','media','pr','visitors','sales_promotion'] %}
+              <button type="button" class="category-chip {% if loop.first %}active{% endif %}"
+                      data-value="{{ cat }}"
+                      onclick="selectCategory(this)">{{ cat }}</button>
+              {% endfor %}
+            </div>
+            <input type="hidden" id="tpl_category" value="custom" />
+          </div>
+
+          {% if page == 'edit' %}
+          <div class="form-group-tb">
+            <label class="toggle-required" style="margin-top:8px;">
+              <input type="checkbox" id="tpl_active" checked onchange="syncPreview()">
+              <span class="toggle-track"></span>
+              Template is Active (visible in submission form)
+            </label>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+
+      <!-- Field type reference -->
+      <div style="margin-top:16px; background:#f8f9fa; border-radius:10px; padding:14px; font-size:12px; color:#6c757d; line-height:1.8;">
+        <strong style="color:#495057; display:block; margin-bottom:6px;">Field Types</strong>
+        <div><strong>text</strong> — Single line input</div>
+        <div><strong>textarea</strong> — Multi-line text</div>
+        <div><strong>number</strong> — Numeric input</div>
+        <div><strong>date</strong> — Date picker</div>
+        <div><strong>datetime-local</strong> — Date &amp; time picker</div>
+        <div><strong>select</strong> — Dropdown with options</div>
+        <div><strong>custom</strong> — Any HTML input type you specify</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Field builder + preview -->
+    <div>
+      <div class="builder-panel">
+        <div class="panel-header">
+          <i class="bi bi-list-ul"></i> Fields
+          <span style="margin-left:auto; font-size:12px; opacity:0.8;">Drag to reorder</span>
+        </div>
+        <div class="panel-body">
+          <div class="fields-list" id="fieldsList"></div>
+          <button type="button" class="btn-add-field" onclick="addField()">
+            <i class="bi bi-plus-circle"></i> Add Field
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Preview -->
+      <div class="preview-panel" style="margin-top:18px;">
+        <div class="panel-header">
+          <i class="bi bi-eye"></i> Live Form Preview
+          <span style="margin-left:auto; font-size:12px; opacity:0.8;">How one entry row will look</span>
+        </div>
+        <div id="livePreview">
+          <div class="preview-empty">Add fields above to see a preview</div>
+        </div>
+      </div>
+
+      <!-- Save bar -->
+      <div class="save-bar">
+        <a href="{{ url_for('custom_templates_list') }}" class="btn-tb btn-tb-outline">
+          Cancel
+        </a>
+        <button type="button" class="btn-tb btn-tb-primary" onclick="saveTemplate()" id="saveBtn">
+          <i class="bi bi-check-circle"></i>
+          {% if page == 'edit' %}Save Changes{% else %}Create Template{% endif %}
+        </button>
+        <span class="save-status" id="saveStatus"></span>
+      </div>
+    </div>
+
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+{% if page != 'list' %}
+
+const PAGE_MODE = '{{ page }}';
+const SAVE_URL  = PAGE_MODE === 'edit'
+  ? '{{ url_for("custom_template_edit", template_id=ct.id) if page == "edit" else "" }}'
+  : '{{ url_for("custom_template_new") }}';
+const LIST_URL  = '{{ url_for("custom_templates_list") }}';
+
+// ── State ──
+let fields = [];  // [{id, label, type, required, options:[]}]
+let fieldCounter = 0;
+let dragSrcIdx = null;
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  {% if page == 'edit' %}
+  const data = {{ ct_json | safe }};
+  document.getElementById('tpl_name').value     = data.name;
+  document.getElementById('tpl_code').value     = data.code;
+  document.getElementById('tpl_active').checked = data.is_active;
+  selectCategoryByValue(data.category);
+
+  fields = data.fields.map(f => ({
+    id:       ++fieldCounter,
+    label:    f.label,
+    type:     f.type,
+    required: f.required,
+    options:  f.options || [],
+    open:     false,
+    customType: (f.type === 'custom' ? '' : '')
+  }));
+  renderFields();
+  {% else %}
+  addField(); // Start with one blank field
+  {% endif %}
+});
+
+// ── Category chips ──
+function selectCategory(btn) {
+  document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tpl_category').value = btn.dataset.value;
+}
+function selectCategoryByValue(val) {
+  document.querySelectorAll('.category-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.value === val);
+  });
+  document.getElementById('tpl_category').value = val;
+}
+
+// ── Field management ──
+function addField() {
+  fields.push({ id: ++fieldCounter, label: '', type: 'text', required: false, options: [], open: true });
+  renderFields();
+  syncPreview();
+}
+
+function removeField(id) {
+  fields = fields.filter(f => f.id !== id);
+  renderFields();
+  syncPreview();
+}
+
+function updateField(id, key, value) {
+  const f = fields.find(f => f.id === id);
+  if (f) { f[key] = value; }
+  if (key === 'label' || key === 'type' || key === 'required') syncPreview();
+  if (key === 'label') updateFieldPreviewLabel(id, value);
+  if (key === 'type')  updateTypeSection(id, value);
+}
+
+function toggleFieldOpen(id) {
+  const f = fields.find(f => f.id === id);
+  if (f) f.open = !f.open;
+  const body = document.getElementById(`fb_${id}`);
+  if (body) body.classList.toggle('open', f.open);
+  const icon = document.getElementById(`fi_${id}`);
+  if (icon) icon.textContent = f.open ? '▲' : '▼';
+}
+
+// ── Render all fields ──
+function renderFields() {
+  const list = document.getElementById('fieldsList');
+  list.innerHTML = '';
+  fields.forEach((f, idx) => {
+    list.appendChild(buildFieldEl(f, idx));
+  });
+  initDrag();
+}
+
+function buildFieldEl(f, idx) {
+  const div = document.createElement('div');
+  div.className = 'field-item';
+  div.dataset.id = f.id;
+  div.draggable = true;
+
+  const typeColors = {
+    text: '#0d6efd', textarea: '#6f42c1', number: '#fd7e14',
+    date: '#20c997', 'datetime-local': '#17a2b8', select: '#e83e8c', custom: '#6c757d'
+  };
+  const tc = typeColors[f.type] || '#6c757d';
+
+  div.innerHTML = `
+    <div class="field-header" onclick="toggleFieldOpen(${f.id})">
+      <span class="drag-handle">⠿</span>
+      <span class="field-label-preview ${f.label ? '' : 'empty'}" id="flp_${f.id}">
+        ${f.label || 'Untitled field'}
+      </span>
+      <span class="field-type-badge" style="background:${tc}20; color:${tc}" id="ftb_${f.id}">${f.type}</span>
+      ${f.required ? `<span class="field-required-badge">required</span>` : ''}
+      <span style="font-size:11px; color:#adb5bd;" id="fi_${f.id}">${f.open ? '▲' : '▼'}</span>
+      <button type="button" class="btn-remove-field" onclick="event.stopPropagation(); removeField(${f.id})" title="Remove field">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="field-body ${f.open ? 'open' : ''}" id="fb_${f.id}">
+      <div class="field-row">
+        <div>
+          <div class="field-label-sm">Label *</div>
+          <input class="field-input" type="text" placeholder="Field label"
+                 value="${escHtml(f.label)}"
+                 oninput="updateField(${f.id}, 'label', this.value)"
+                 onclick="event.stopPropagation()" />
+        </div>
+        <div>
+          <div class="field-label-sm">Type</div>
+          <select class="field-select" onchange="updateField(${f.id}, 'type', this.value)" onclick="event.stopPropagation()" id="fts_${f.id}">
+            ${['text','textarea','number','date','datetime-local','select','custom'].map(t =>
+              `<option value="${t}" ${f.type===t?'selected':''}>${t}</option>`
+            ).join('')}
+          </select>
+        </div>
+      </div>
+
+      <!-- Custom type input -->
+      <div id="fct_${f.id}" class="field-row full" style="display:${f.type==='custom'?'grid':'none'}">
+        <div>
+          <div class="field-label-sm">Custom type string (HTML input type)</div>
+          <input class="field-input" type="text" placeholder="e.g. email, tel, url, color"
+                 value="${escHtml(f.customType || '')}"
+                 oninput="updateField(${f.id}, 'customType', this.value)"
+                 onclick="event.stopPropagation()" />
+        </div>
+      </div>
+
+      <!-- Options for select type -->
+      <div id="fop_${f.id}" style="display:${f.type==='select'?'block':'none'}">
+        <div class="field-label-sm" style="margin-bottom:6px;">Dropdown Options</div>
+        <div class="options-editor" id="fopl_${f.id}">
+          ${f.options.map((opt, oi) => buildOptionRow(f.id, oi, opt)).join('')}
+        </div>
+        <button type="button" class="btn-add-option"
+                onclick="addOption(${f.id}); event.stopPropagation()">
+          + Add option
+        </button>
+      </div>
+
+      <div style="margin-top:10px;">
+        <label class="toggle-required" onclick="event.stopPropagation()">
+          <input type="checkbox" ${f.required?'checked':''}
+                 onchange="updateField(${f.id}, 'required', this.checked)">
+          <span class="toggle-track"></span>
+          Required field
+        </label>
+      </div>
+    </div>
+  `;
+  return div;
+}
+
+function updateFieldPreviewLabel(id, val) {
+  const el = document.getElementById(`flp_${id}`);
+  if (el) {
+    el.textContent = val || 'Untitled field';
+    el.className = `field-label-preview ${val ? '' : 'empty'}`;
+  }
+}
+
+function updateTypeSection(id, type) {
+  const typeColors = {
+    text:'#0d6efd', textarea:'#6f42c1', number:'#fd7e14',
+    date:'#20c997', 'datetime-local':'#17a2b8', select:'#e83e8c', custom:'#6c757d'
+  };
+  const tc = typeColors[type] || '#6c757d';
+  const badge = document.getElementById(`ftb_${id}`);
+  if (badge) { badge.textContent = type; badge.style.background = tc+'20'; badge.style.color = tc; }
+
+  const opt = document.getElementById(`fop_${id}`);
+  if (opt) opt.style.display = type === 'select' ? 'block' : 'none';
+
+  const cust = document.getElementById(`fct_${id}`);
+  if (cust) cust.style.display = type === 'custom' ? 'grid' : 'none';
+}
+
+// ── Dropdown options ──
+function buildOptionRow(fieldId, optIdx, val) {
+  return `<div class="option-row" id="or_${fieldId}_${optIdx}">
+    <input type="text" placeholder="Option ${optIdx+1}" value="${escHtml(val)}"
+           oninput="updateOption(${fieldId}, ${optIdx}, this.value)"
+           onclick="event.stopPropagation()" />
+    <button type="button" class="btn-remove-option"
+            onclick="removeOption(${fieldId}, ${optIdx}); event.stopPropagation()">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>`;
+}
+
+function addOption(fieldId) {
+  const f = fields.find(f => f.id === fieldId);
+  if (!f) return;
+  f.options.push('');
+  const list = document.getElementById(`fopl_${fieldId}`);
+  if (list) {
+    const idx = f.options.length - 1;
+    list.insertAdjacentHTML('beforeend', buildOptionRow(fieldId, idx, ''));
+  }
+}
+
+function removeOption(fieldId, optIdx) {
+  const f = fields.find(f => f.id === fieldId);
+  if (!f) return;
+  f.options.splice(optIdx, 1);
+  const list = document.getElementById(`fopl_${fieldId}`);
+  if (list) {
+    list.innerHTML = f.options.map((opt, i) => buildOptionRow(fieldId, i, opt)).join('');
+  }
+}
+
+function updateOption(fieldId, optIdx, val) {
+  const f = fields.find(f => f.id === fieldId);
+  if (f && f.options) f.options[optIdx] = val;
+}
+
+// ── Drag to reorder ──
+function initDrag() {
+  const items = document.querySelectorAll('.field-item');
+  items.forEach((item, idx) => {
+    item.addEventListener('dragstart', e => {
+      dragSrcIdx = idx;
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      if (dragSrcIdx === null || dragSrcIdx === idx) return;
+      const moved = fields.splice(dragSrcIdx, 1)[0];
+      fields.splice(idx, 0, moved);
+      dragSrcIdx = null;
+      renderFields();
+      syncPreview();
+    });
+  });
+}
+
+// ── Live Preview ──
+function syncPreview() {
+  const preview = document.getElementById('livePreview');
+  if (fields.length === 0) {
+    preview.innerHTML = '<div class="preview-empty">Add fields above to see a preview</div>';
+    return;
+  }
+
+  const typeHtml = {
+    text:            (f) => `<input class="preview-field-input" type="text" placeholder="${escHtml(f.label)}..." disabled />`,
+    textarea:        (f) => `<textarea class="preview-field-input" rows="2" disabled placeholder="${escHtml(f.label)}..."></textarea>`,
+    number:          (f) => `<input class="preview-field-input" type="number" placeholder="0" disabled />`,
+    date:            (f) => `<input class="preview-field-input" type="date" disabled />`,
+    'datetime-local':(f) => `<input class="preview-field-input" type="datetime-local" disabled />`,
+    select:          (f) => `<select class="preview-field-input" disabled><option>-- Select --</option>${(f.options||[]).map(o=>`<option>${escHtml(o)}</option>`).join('')}</select>`,
+    custom:          (f) => `<input class="preview-field-input" type="${escHtml(f.customType||'text')}" placeholder="${escHtml(f.label)}..." disabled />`
+  };
+
+  const fieldHtml = fields.map(f => `
+    <div class="preview-field-group">
+      <div class="preview-field-label">
+        ${escHtml(f.label || 'Untitled')}
+        ${f.required ? '<span class="req-star"> *</span>' : ''}
+      </div>
+      ${(typeHtml[f.type] || typeHtml.text)(f)}
+    </div>
+  `).join('');
+
+  const cols = Math.min(fields.length, 3);
+  preview.innerHTML = `
+    <div class="preview-row" style="grid-template-columns: repeat(${cols}, 1fr)">
+      ${fieldHtml}
+    </div>`;
+}
+
+// ── Save ──
+async function saveTemplate() {
+  const name     = document.getElementById('tpl_name').value.trim();
+  const code     = document.getElementById('tpl_code').value.trim();
+  const category = document.getElementById('tpl_category').value;
+  const isActive = PAGE_MODE === 'edit'
+    ? document.getElementById('tpl_active').checked
+    : true;
+
+  const status = document.getElementById('saveStatus');
+  const btn    = document.getElementById('saveBtn');
+
+  if (!name) { setStatus('error', 'Template name is required.'); return; }
+  if (!code) { setStatus('error', 'Template code is required.');  return; }
+  if (fields.length === 0) { setStatus('error', 'Add at least one field.'); return; }
+
+  const validFields = fields.filter(f => f.label.trim());
+  if (validFields.length === 0) { setStatus('error', 'All fields need a label.'); return; }
+
+  // Collect current option values from DOM
+  validFields.forEach(f => {
+    if (f.type === 'select') {
+      const list = document.getElementById(`fopl_${f.id}`);
+      if (list) {
+        f.options = Array.from(list.querySelectorAll('input[type=text]'))
+          .map(i => i.value.trim()).filter(Boolean);
+      }
+    }
+    if (f.type === 'custom') {
+      const cinput = document.querySelector(`#fct_${f.id} input`);
+      if (cinput) f.customType = cinput.value.trim();
+    }
+  });
+
+  const payload = {
+    name, code, category,
+    is_active: isActive,
+    fields: validFields.map(f => ({
+      label:    f.label.trim(),
+      type:     f.type === 'custom' ? (f.customType || 'text') : f.type,
+      required: f.required,
+      options:  f.type === 'select' ? f.options : []
+    }))
+  };
+
+  btn.disabled = true;
+  setStatus('', 'Saving...');
+
+  try {
+    const resp = await fetch(SAVE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await resp.json();
+
+    if (result.success) {
+      setStatus('success', '✓ Saved successfully! Redirecting...');
+      setTimeout(() => { window.location.href = LIST_URL; }, 1200);
+    } else {
+      setStatus('error', result.error || 'Save failed.');
+      btn.disabled = false;
+    }
+  } catch (err) {
+    setStatus('error', 'Network error: ' + err.message);
+    btn.disabled = false;
+  }
+}
+
+function setStatus(type, msg) {
+  const el = document.getElementById('saveStatus');
+  el.textContent = msg;
+  el.className = 'save-status ' + type;
+}
+
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+{% endif %}
+</script>
+{% endblock %}

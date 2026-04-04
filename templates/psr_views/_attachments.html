@@ -1,0 +1,169 @@
+{% set attachments = report.attachments if report.attachments else [] %}
+{% if attachments %}
+<div class="container" style="padding: 0 40px 40px; max-width: 1200px; margin: 0 auto;">
+  <div class="attach-section-header">
+    <span>📎 Attachments</span>
+    <span class="attach-count-badge">{{ attachments|length }} file{{ 's' if attachments|length != 1 else '' }}</span>
+  </div>
+
+  <div class="attach-grid">
+    {% for att in attachments %}
+    <div class="attach-card">
+      <div class="attach-icon">
+        <i class="bi {{ att.get_icon_class() }}"></i>
+      </div>
+      <div class="attach-info">
+        <div class="attach-name" title="{{ att.original_filename }}">
+          {{ att.original_filename }}
+        </div>
+        <div class="attach-meta">
+          <span><i class="bi bi-hdd"></i> {{ att.get_formatted_size() }}</span>
+          <span><i class="bi bi-calendar3"></i> {{ att.upload_date.strftime('%d %b %Y') }}</span>
+          <span><i class="bi bi-person"></i> {{ att.uploader.name if att.uploader else 'Unknown' }}</span>
+        </div>
+      </div>
+      <div class="attach-actions">
+        <a href="{{ url_for('download_attachment', attachment_id=att.id) }}"
+           class="attach-btn attach-btn-download" title="Download">
+          <i class="bi bi-download"></i> Download
+        </a>
+        {% if current_user.is_admin() or (report.user_id is defined and report.user_id == current_user.id) or (report.user_id is not defined and att.uploaded_by == current_user.id) %}
+        <form method="POST"
+              action="{{ url_for('delete_attachment', attachment_id=att.id) }}"
+              style="display:inline"
+              onsubmit="return confirm('Delete \'{{ att.original_filename }}\'?')">
+          <button type="submit" class="attach-btn attach-btn-delete" title="Delete">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<style>
+  .attach-section-header {
+    background: #006837;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .attach-count-badge {
+    background: rgba(255,255,255,0.25);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .attach-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+
+  .attach-card {
+    background: white;
+    border: 1.5px solid #dee2e6;
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+
+  .attach-card:hover {
+    border-color: #006837;
+    box-shadow: 0 4px 12px rgba(0,104,55,0.1);
+  }
+
+  .attach-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .attach-icon .bi-file-earmark-pdf-fill   { color: #dc3545; }
+  .attach-icon .bi-file-earmark-word-fill  { color: #0d6efd; }
+  .attach-icon .bi-file-earmark-excel-fill { color: #198754; }
+  .attach-icon .bi-file-earmark-image-fill { color: #0dcaf0; }
+  .attach-icon .bi-file-earmark-fill       { color: #6c757d; }
+
+  .attach-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #212529;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .attach-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+    color: #6c757d;
+  }
+
+  .attach-meta i { margin-right: 3px; }
+
+  .attach-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .attach-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .attach-btn-download {
+    background: #006837;
+    color: white;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .attach-btn-download:hover { background: #005028; color: white; }
+
+  .attach-btn-delete {
+    background: #fff0f0;
+    color: #dc3545;
+    border: 1.5px solid #dc3545;
+  }
+
+  .attach-btn-delete:hover {
+    background: #dc3545;
+    color: white;
+  }
+
+  @media (max-width: 600px) {
+    .attach-grid { grid-template-columns: 1fr; }
+  }
+
+  @media print {
+    .attach-actions { display: none !important; }
+  }
+</style>

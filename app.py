@@ -10,10 +10,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.utils
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, send_file, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from functools import wraps
@@ -24,6 +25,15 @@ from dotenv import load_dotenv
 from io import StringIO, BytesIO
 import csv
 from collections import Counter
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from file_upload_utils import (
+    save_file, delete_file, get_file_path,
+    format_file_size, get_file_icon,
+    UPLOAD_FOLDER, MAX_FILES_PER_REPORT,
+    init_upload_folder
+)
 
 # Load environment variables
 load_dotenv()
@@ -39,6 +49,26 @@ NIGERIAN_STATES = [
 ]
 
 REPORT_TYPES = list(PSR_TEMPLATES.keys())
+
+HQ_DEPARTMENTS = [
+    'Mergers and Acquisitions',
+    'Surveillance and Investigation',
+    'Consumer and Business Education',
+    'Quality Assurance Development',
+    'Administration',
+    'Finance and Accounts',
+    'Planning Research and Statistics',
+    'Legal Services',
+    'Internal Audit',
+    'Special Duties',
+    'Anti-Competitive Practices',
+    'Information Communication Technology',
+    'Procurement',
+    'Public Relations',
+    'Corporate Affairs',
+]
+
+PSR_DEPT = 'Planning Research and Statistics'  # always sees everything
 
 TARGETS_ACHIEVED_LIST = [
     'Number of enforcement operations carried out (S&I, Zones, Lagos Office)',
@@ -65,6 +95,9 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///project.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+
+# MFA OTP expiry in minutes
+OTP_EXPIRY_MINUTES = 10
 
 # Security Headers
 @app.after_request
@@ -97,6 +130,8 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(100), nullable=False)
     sex = db.Column(db.String(10), nullable=False)
     fccpc_office = db.Column(db.String(100), nullable=False)
+    office_type = db.Column(db.String(20), default='zonal', nullable=False)   # 'hq' or 'zonal'
+    department = db.Column(db.String(100), nullable=True)                      # HQ dept, None for zonal
     reports = db.relationship('PriceReport', backref='reporter', lazy=True) 
 
     def set_password(self, password):
@@ -116,9 +151,32 @@ class User(db.Model, UserMixin):
 
     def is_evc(self):
         return self.role >= 4
-    
+
     def is_active(self):
         return self.is_enabled
+
+    def is_hq(self):
+        """True if user is based at HQ (Abuja)."""
+        return self.office_type == 'HQ'
+
+    def is_psr(self):
+        """True if user belongs to Planning Research and Statistics department."""
+        return self.department == 'Planning Research and Statistics'
+
+    def can_view_all_reports(self):
+        """Admins, PSR dept, and zonal/state users can view all reports."""
+        return self.is_admin() or self.is_psr() or not self.is_hq()
+
+    def can_submit_template(self, template_dept):
+        """
+        Returns True if this user is allowed to submit a report for a template
+        that belongs to `template_dept` (None means unassigned = open to all).
+        """
+        if self.is_admin() or self.is_psr() or not self.is_hq():
+            return True
+        if template_dept is None:          # unassigned template — visible to all
+            return True
+        return self.department == template_dept
 
 class PriceReport(db.Model):
     __tablename__ = 'price_reports'
@@ -144,7 +202,7 @@ class ProgramReport(db.Model):
     period_covered = db.Column(db.String(100), nullable=True)
     objective = db.Column(db.Text, nullable=True)
     date_started = db.Column(db.Date, nullable=True)
-    date_ended = db.Column(db.Date, nullable=True)  # ✅ NEW FIELD - PHASE 1
+    date_ended = db.Column(db.Date, nullable=True)  # âœ… NEW FIELD - PHASE 1
     previous_status_percentage = db.Column(db.Integer, default=0)
     status_details = db.Column(db.Text, nullable=True)
     constraints_requirements = db.Column(db.Text)
@@ -244,6 +302,99 @@ class AuditLog(db.Model):
     def __repr__(self):
         return f"<AuditLog {self.action}>"
 
+# ── Custom Template Builder Models ──────────────────────────────
+
+class CustomTemplate(db.Model):
+    __tablename__ = 'custom_templates'
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(255), nullable=False)
+    code        = db.Column(db.String(20),  nullable=False)
+    slug        = db.Column(db.String(100), nullable=False, unique=True)
+    category    = db.Column(db.String(50),  default='custom')
+    department  = db.Column(db.String(100), nullable=True)   # None = visible to all
+    is_active   = db.Column(db.Boolean, default=True, nullable=False)
+    created_by  = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+    fields      = db.relationship('CustomTemplateField',
+                                  backref='template',
+                                  cascade='all, delete-orphan',
+                                  order_by='CustomTemplateField.sort_order')
+    creator     = db.relationship('User', backref=db.backref('custom_templates', lazy=True))
+
+    def to_dynamic_config(self):
+        """Return a config dict compatible with PSR_DYNAMIC_TEMPLATES format."""
+        return {
+            'title': self.name,
+            'fields': [
+                {
+                    'key':      f.field_key,
+                    'label':    f.label,
+                    'type':     f.field_type,
+                    'required': f.is_required,
+                    'options':  json.loads(f.options) if f.options else [],
+                }
+                for f in self.fields
+            ]
+        }
+
+    def __repr__(self):
+        return f'<CustomTemplate {self.code}: {self.name}>'
+
+
+class CustomTemplateField(db.Model):
+    __tablename__ = 'custom_template_fields'
+    id          = db.Column(db.Integer, primary_key=True)
+    template_id = db.Column(db.Integer, db.ForeignKey('custom_templates.id', ondelete='CASCADE'), nullable=False)
+    field_key   = db.Column(db.String(100), nullable=False)
+    label       = db.Column(db.String(255), nullable=False)
+    field_type  = db.Column(db.String(50),  default='text', nullable=False)
+    options     = db.Column(db.Text,  nullable=True)   # JSON array for dropdowns
+    is_required = db.Column(db.Boolean, default=False)
+    sort_order  = db.Column(db.Integer, default=0)
+
+    def __repr__(self):
+        return f'<CustomTemplateField {self.field_key}>'
+
+class ReportAttachment(db.Model):
+    """
+    Unified file attachments for both ProgramReports and ConsumerComplaints.
+    Only one of report_id or complaint_id will be set per record.
+    """
+    __tablename__ = 'report_attachments'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # One of these two will be set — the other will be NULL
+    report_id = db.Column(db.Integer, db.ForeignKey('program_reports.id', ondelete='CASCADE'), nullable=True)
+    complaint_id = db.Column(db.Integer, db.ForeignKey('consumer_complaints.id', ondelete='CASCADE'), nullable=True)
+
+    filename = db.Column(db.String(255), nullable=False)           # Unique filename on disk
+    original_filename = db.Column(db.String(255), nullable=False)  # Original user filename
+    file_size = db.Column(db.Integer, nullable=False)              # Size in bytes
+    file_type = db.Column(db.String(50), nullable=False)           # File extension
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+
+    # Relationships
+    report = db.relationship('ProgramReport', backref=db.backref('attachments', lazy=True, cascade='all, delete-orphan'))
+    complaint = db.relationship('ConsumerComplaint', backref=db.backref('attachments', lazy=True, cascade='all, delete-orphan'))
+    uploader = db.relationship('User', backref=db.backref('uploaded_files', lazy=True))
+
+    def __repr__(self):
+        return f'<ReportAttachment {self.id}: {self.original_filename}>'
+
+    def get_formatted_size(self):
+        return format_file_size(self.file_size)
+
+    def get_icon_class(self):
+        return get_file_icon(self.original_filename)
+
+    def get_owner_id(self):
+        """Return the folder name used for storing this file on disk"""
+        if self.report_id:
+            return f"report_{self.report_id}"
+        return f"complaint_{self.complaint_id}"
+
 # ==================== LOGIN MANAGER ====================
 
 login_manager = LoginManager()
@@ -297,6 +448,174 @@ def log_action(action, target_user=None, details=None):
     except Exception:
         db.session.rollback()
 
+
+def get_all_dynamic_templates():
+    """
+    Merge built-in PSR_DYNAMIC_TEMPLATES with active CustomTemplates.
+    Returns a combined dict keyed by slug — safe to pass to Jinja and JS.
+    Each entry includes a 'department' key (None = unassigned = visible to all).
+    """
+    combined = {}
+    for slug, config in PSR_DYNAMIC_TEMPLATES.items():
+        combined[slug] = dict(config)
+        combined[slug].setdefault('department', None)   # built-ins unassigned until admin maps them
+    try:
+        custom = CustomTemplate.query.filter_by(is_active=True).all()
+        for ct in custom:
+            entry = ct.to_dynamic_config()
+            entry['department'] = ct.department
+            combined[ct.slug] = entry
+    except Exception:
+        pass
+    return combined
+
+
+def get_templates_for_user(user):
+    """
+    Return the subset of dynamic templates this user is allowed to submit.
+    Admins, PSR dept, and zonal users get everything.
+    HQ users get only templates matching their department + unassigned templates.
+    """
+    all_tpls = get_all_dynamic_templates()
+    if user.can_view_all_reports():
+        return all_tpls
+    return {slug: cfg for slug, cfg in all_tpls.items()
+            if user.can_submit_template(cfg.get('department'))}
+
+
+def slugify(text):
+    """Convert a name to a URL-safe slug."""
+    import re
+    text = text.lower().strip()
+    text = re.sub(r'[^a-z0-9\s_]', '', text)
+    text = re.sub(r'[\s]+', '_', text)
+    return text[:80]
+
+def _build_status_of_complaint(description, date_time_str):
+    """
+    Combine status description text and datetime into a single stored string.
+    e.g. "Under Investigation — 2026-03-05 14:30"
+    """
+    parts = []
+    if description and description.strip():
+        parts.append(description.strip())
+    if date_time_str:
+        try:
+            dt = datetime.fromisoformat(date_time_str)
+            parts.append(dt.strftime('%Y-%m-%d %H:%M'))
+        except ValueError:
+            parts.append(date_time_str)
+    return ' — '.join(parts) if parts else None
+
+
+def _save_attachments(req, report_id=None, complaint_id=None):
+    """
+    Process uploaded files from a form request and save to disk + database.
+    Pass either report_id (ProgramReport) or complaint_id (ConsumerComplaint).
+    Returns the number of files successfully saved.
+    """
+    if 'attachments' not in req.files:
+        return 0
+
+    files = req.files.getlist('attachments')
+    saved = 0
+
+    # Determine folder name and check existing count
+    folder_key = f"report_{report_id}" if report_id else f"complaint_{complaint_id}"
+    existing = ReportAttachment.query.filter_by(
+        report_id=report_id,
+        complaint_id=complaint_id
+    ).count()
+
+    for file in files:
+        if not file or file.filename == '':
+            continue
+        if existing + saved >= MAX_FILES_PER_REPORT:
+            flash(f'Maximum {MAX_FILES_PER_REPORT} files allowed per report. Some files were skipped.', 'warning')
+            break
+
+        success, unique_filename, error = save_file(file, folder_key)
+        if not success:
+            flash(f'Could not upload "{file.filename}": {error}', 'warning')
+            continue
+
+        try:
+            file_path = get_file_path(folder_key, unique_filename)
+            file_size = os.path.getsize(file_path)
+            extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'unknown'
+
+            attachment = ReportAttachment(
+                report_id=report_id,
+                complaint_id=complaint_id,
+                filename=unique_filename,
+                original_filename=secure_filename(file.filename),
+                file_size=file_size,
+                file_type=extension,
+                uploaded_by=current_user.id
+            )
+            db.session.add(attachment)
+            saved += 1
+        except Exception as e:
+            delete_file(folder_key, unique_filename)
+            flash(f'Error saving "{file.filename}": {str(e)}', 'warning')
+
+    if saved > 0:
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash('Attachments could not be saved to database.', 'danger')
+            return 0
+
+    return saved
+
+
+def generate_otp():
+    """Generate a cryptographically secure 8-digit OTP."""
+    return ''.join(secrets.choice(string.digits) for _ in range(8))
+
+
+def send_otp_email(user_email, user_name, otp):
+    """Send OTP via M365 SMTP. Returns (success, error_message)."""
+    smtp_server   = os.environ.get('MAIL_SERVER', 'smtp.office365.com')
+    smtp_port     = int(os.environ.get('MAIL_PORT', 587))
+    smtp_user     = os.environ.get('MAIL_USERNAME', '')
+    smtp_password = os.environ.get('MAIL_PASSWORD', '')
+    sender_email  = os.environ.get('MAIL_DEFAULT_SENDER', smtp_user)
+
+    if not smtp_user or not smtp_password:
+        # Dev fallback — print to console
+        print(f"\n[MFA DEV] OTP for {user_email}: {otp}\n")
+        return True, None
+
+    subject = "FCCPC PSR — Your Login Verification Code"
+    body = f"""Dear {user_name},
+
+Your 8-digit verification code for the FCCPC Price Surveillance & Reporting System is:
+
+    {otp}
+
+This code expires in {OTP_EXPIRY_MINUTES} minutes.
+
+If you did not attempt to log in, please contact your administrator immediately.
+
+— FCCPC PSR System
+"""
+    try:
+        msg = MIMEMultipart()
+        msg['From']    = sender_email
+        msg['To']      = user_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(sender_email, user_email, msg.as_string())
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
 # ==================== DECORATORS ====================
 
 def admin_required(f):
@@ -334,20 +653,24 @@ def register():
         name = request.form.get('name', '').strip()
         sex = request.form.get('sex', '').strip()
         fccpc_office = request.form.get('fccpc_office', '').strip()
-        
+        office_type = request.form.get('office_type', 'zonal').strip()
+        department = request.form.get('department', '').strip() or None
+
         if not all([email, password, name, sex, fccpc_office]):
             flash('All fields are required!', 'danger')
             return redirect(url_for('register'))
-        
+
         if User.query.filter_by(email=email).first():
             flash('Email already registered!', 'danger')
             return redirect(url_for('register'))
-        
+
         new_user = User(
             email=email,
             name=name,
             sex=sex,
             fccpc_office=fccpc_office,
+            office_type=office_type,
+            department=department if office_type == 'HQ' else None,
             is_enabled=True
         )
         new_user.set_password(password)
@@ -363,7 +686,7 @@ def register():
         db.session.commit()
         return redirect(url_for('login'))
     
-    return render_template('register.html', states=NIGERIAN_STATES)
+    return render_template('register.html', states=NIGERIAN_STATES, departments=HQ_DEPARTMENTS)
 
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
@@ -382,15 +705,77 @@ def login():
             if not user.is_enabled:
                 flash("Your account has been suspended. Contact administrator.", "danger")
                 return redirect(url_for("login"))
-            
+
+            # MFA: generate 8-digit OTP, store in session, send email
+            otp    = generate_otp()
+            expiry = datetime.utcnow() + timedelta(minutes=OTP_EXPIRY_MINUTES)
+
+            session['mfa_user_id']  = user.id
+            session['mfa_otp']      = otp
+            session['mfa_expiry']   = expiry.isoformat()
+            session['mfa_attempts'] = 0
+
+            success, error = send_otp_email(user.email, user.name, otp)
+            if not success:
+                flash(f'Could not send verification email: {error}. Contact administrator.', 'danger')
+                session.clear()
+                return redirect(url_for('login'))
+
+            flash(f'A verification code has been sent to {user.email}.', 'info')
+            return redirect(url_for('verify_otp'))
+        else:
+            flash('Invalid email or password.', 'danger')
+
+    return render_template('login.html')
+
+
+@app.route('/verify-otp', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
+def verify_otp():
+    if 'mfa_user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['mfa_user_id'])
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        entered_otp = request.form.get('otp', '').strip()
+
+        # Check expiry
+        expiry = datetime.fromisoformat(session.get('mfa_expiry', '2000-01-01'))
+        if datetime.utcnow() > expiry:
+            session.clear()
+            flash('Verification code expired. Please log in again.', 'warning')
+            return redirect(url_for('login'))
+
+        # Max 5 attempts
+        attempts = session.get('mfa_attempts', 0)
+        if attempts >= 5:
+            session.clear()
+            flash('Too many incorrect attempts. Please log in again.', 'danger')
+            log_action("MFA Failed", target_user=user,
+                       details=f"{user.email} exceeded OTP attempts")
+            return redirect(url_for('login'))
+
+        if secrets.compare_digest(entered_otp, session.get('mfa_otp', '')):
+            session.pop('mfa_user_id',  None)
+            session.pop('mfa_otp',      None)
+            session.pop('mfa_expiry',   None)
+            session.pop('mfa_attempts', None)
             login_user(user)
-            log_action(action="Login", details=f"{user.email} logged in")
+            log_action(action="Login", details=f"{user.email} logged in (MFA passed)")
             flash('Logged in successfully!', 'success')
             return redirect(url_for('program_dashboard'))
         else:
-            flash('Invalid email or password.', 'danger')
-    
-    return render_template('login.html')
+            session['mfa_attempts'] = attempts + 1
+            remaining = 5 - session['mfa_attempts']
+            flash(f'Incorrect code. {remaining} attempt(s) remaining.', 'danger')
+
+    masked_email = user.email[:3] + '***@' + user.email.split('@')[1]
+    return render_template('verify_otp.html', masked_email=masked_email,
+                           expiry_minutes=OTP_EXPIRY_MINUTES)
 
 @app.route('/logout')
 @login_required
@@ -407,9 +792,10 @@ def logout():
 @admin_required
 def admin_dashboard():
     """Admin dashboard for user management"""
-    role = request.args.get("role")
-    search = request.args.get("search")
-    
+    role        = request.args.get('role')
+    search      = request.args.get('search')
+    office_type = request.args.get('office_type')
+
     query = User.query
     if role:
         try:
@@ -417,10 +803,22 @@ def admin_dashboard():
         except ValueError:
             pass
     if search:
-        query = query.filter(User.name.ilike(f"%{search}%") | User.email.ilike(f"%{search}%"))
-    
+        query = query.filter(User.name.ilike(f'%{search}%') | User.email.ilike(f'%{search}%'))
+    if office_type:
+        query = query.filter(User.office_type == office_type)
+
     users = query.order_by(User.id.desc()).all()
-    return render_template("admin_dashboard.html", users=users)
+
+    # FIX: Pass total counts separately so badges always show DB totals, not filtered
+    total_users  = User.query.count()
+    total_hq     = User.query.filter_by(office_type='HQ').count()
+    total_zonal  = User.query.filter(User.office_type != 'HQ').count()
+    total_active = User.query.filter_by(is_enabled=True).count()
+
+    return render_template('admin_dashboard.html', users=users,
+                           hq_departments=HQ_DEPARTMENTS,
+                           total_users=total_users, total_hq=total_hq,
+                           total_zonal=total_zonal, total_active=total_active)
 
 @app.route('/admin/change-password/<int:user_id>', methods=['GET', 'POST'])
 @admin_required
@@ -530,7 +928,43 @@ def elevate_user(user_id, new_role):
         db.session.rollback()
         flash("Role update failed.", "danger")
     
-    return redirect(url_for("admin_dashboard"))
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/edit-user/<int:user_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_user(user_id):
+    """Admin edits a user office type, department, and role."""
+    user = User.query.get_or_404(user_id)
+
+    if request.method == 'POST':
+        office_type = request.form.get('office_type', 'Zonal/State').strip()
+        department  = request.form.get('department', '').strip() or None
+        role        = request.form.get('role', str(user.role)).strip()
+
+        user.office_type = office_type
+        user.department  = department if office_type == 'HQ' else None
+
+        if user.id != current_user.id:
+            try:
+                new_role = int(role)
+                if new_role in [1, 2, 3, 4, 9]:
+                    user.role = new_role
+            except ValueError:
+                pass
+
+        try:
+            db.session.commit()
+            log_action("User Edited", target_user=user,
+                       details=f"office_type={office_type}, department={user.department}, role={user.role}")
+            flash(f"{user.name} updated successfully.", 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Update failed: {str(e)}", 'danger')
+
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('edit_user.html', user=user, departments=HQ_DEPARTMENTS)
+
 
 @app.route('/admin/toggle-user/<int:user_id>', methods=['POST'])
 @admin_required
@@ -694,6 +1128,14 @@ def program_report_form():
                     psr_templates=PSR_TEMPLATES
                 )
 
+            # FIX: Server-side permission check
+            all_dyn = get_all_dynamic_templates()
+            if template_slug in all_dyn:
+                tpl_dept = all_dyn[template_slug].get('department')
+                if not current_user.can_submit_template(tpl_dept):
+                    flash("You are not authorised to submit this report template.", "danger")
+                    return redirect(url_for('program_report_form'))
+
             # COMPLAINT TEMPLATES
             if template_slug.startswith("complaints_"):
                 case_file_no = request.form.get('case_file_no', '').strip()
@@ -714,7 +1156,7 @@ def program_report_form():
                         report_types=REPORT_TYPES,
                         targets_list=TARGETS_ACHIEVED_LIST,
                         psr_templates=PSR_TEMPLATES,
-                        dynamic_templates=PSR_DYNAMIC_TEMPLATES
+                        dynamic_templates=get_all_dynamic_templates()
                     )
 
                 # Build complainant details
@@ -756,7 +1198,10 @@ def program_report_form():
                     complainant_details=complainant_details,
                     respondent_details=respondent_details,
                     action_taken=action_taken,
-                    status_of_complaint=request.form.get('status_date_time'),
+                    status_of_complaint=_build_status_of_complaint(
+                        request.form.get('status_description'),
+                        request.form.get('status_date_time')
+                    ),
                     value_of_complaint=value_of_complaint,
                     date_of_resolution=date_of_resolution,
                     complainant_remark=complainant_remark
@@ -764,7 +1209,10 @@ def program_report_form():
 
                 db.session.add(new_complaint)
                 db.session.commit()
-                
+
+                # Process file attachments for complaint
+                _save_attachments(request, complaint_id=new_complaint.id)
+
                 if is_draft:
                     flash(f'Case {case_file_no} saved as draft.', 'info')
                 else:
@@ -779,11 +1227,11 @@ def program_report_form():
             objective = request.form.get('objective') or "N/A"
             status_details = request.form.get('status_details') or "Specialized data submitted."
             
-            # ✅ PHASE 1: Capture date_started and date_ended
+            # âœ… PHASE 1: Capture date_started and date_ended
             ds_str = request.form.get('date_started')
             date_started = datetime.strptime(ds_str, '%Y-%m-%d').date() if ds_str else datetime.utcnow().date()
             
-            de_str = request.form.get('date_ended')  # ✅ NEW: Date Ended field
+            de_str = request.form.get('date_ended')  # âœ… NEW: Date Ended field
             date_ended = datetime.strptime(de_str, '%Y-%m-%d').date() if de_str else None
 
             new_report = ProgramReport(
@@ -793,7 +1241,7 @@ def program_report_form():
                 objective=objective,
                 period_covered=request.form.get('period_covered', 'N/A'),
                 date_started=date_started,
-                date_ended=date_ended,  # ✅ NEW: Save date_ended
+                date_ended=date_ended,  # âœ… NEW: Save date_ended
                 previous_status_percentage=int(request.form.get('previous_status_percentage', 0)),
                 status_percentage=int(request.form.get('status_percentage', 0)),
                 status_details=status_details,
@@ -832,8 +1280,8 @@ def program_report_form():
                     remarks=request.form.get("seizure_remarks")
                 ))
 
-            elif template_slug in PSR_DYNAMIC_TEMPLATES:
-                template_config = PSR_DYNAMIC_TEMPLATES[template_slug]
+            elif template_slug in get_all_dynamic_templates():
+                template_config = get_all_dynamic_templates()[template_slug]
                 fields = template_config["fields"]
                 rows_data = {}
                 
@@ -861,11 +1309,17 @@ def program_report_form():
                         ))
 
             db.session.commit()
-            
+
+            # Process file attachments for program report
+            attach_count = _save_attachments(request, report_id=new_report.id)
+
             if is_draft:
                 flash("Report saved as draft.", "info")
             else:
-                flash("Report submitted successfully!", "success")
+                if attach_count > 0:
+                    flash(f"Report submitted successfully with {attach_count} attachment(s)!", "success")
+                else:
+                    flash("Report submitted successfully!", "success")
             
             return redirect(url_for('program_dashboard'))
 
@@ -877,15 +1331,36 @@ def program_report_form():
                 report_types=REPORT_TYPES,
                 targets_list=TARGETS_ACHIEVED_LIST,
                 psr_templates=PSR_TEMPLATES,
-                dynamic_templates=PSR_DYNAMIC_TEMPLATES
+                dynamic_templates=get_all_dynamic_templates()
             )
+
+    # Build combined report types list and psr_templates dict
+    # including active custom templates — filtered by user's department
+    user_dynamic = get_templates_for_user(current_user)
+    all_report_types = list(REPORT_TYPES)
+    all_psr_templates = dict(PSR_TEMPLATES)
+    try:
+        custom_tpls = CustomTemplate.query.filter_by(is_active=True).all()
+        for ct in custom_tpls:
+            if not current_user.can_submit_template(ct.department):
+                continue
+            key = ct.name.upper()
+            all_psr_templates[key] = {
+                'code': ct.code,
+                'slug': ct.slug,
+                'category': ct.category,
+                'requires_common_fields': False
+            }
+            all_report_types.append(key)
+    except Exception:
+        pass
 
     return render_template(
         'program_report_form.html',
-        report_types=REPORT_TYPES,
+        report_types=all_report_types,
         targets_list=TARGETS_ACHIEVED_LIST,
-        psr_templates=PSR_TEMPLATES,
-        dynamic_templates=PSR_DYNAMIC_TEMPLATES
+        psr_templates=all_psr_templates,
+        dynamic_templates=user_dynamic
     )
 
 # ==================== UNIFIED PROGRAM DASHBOARD ====================
@@ -899,9 +1374,16 @@ def program_dashboard():
 
     # FETCH PSR REPORTS
     psr_query = ProgramReport.query
-    
-    if current_user.is_admin() or current_user.is_director() or current_user.is_evc():
-        pass  
+
+    if current_user.can_view_all_reports():
+        pass  # Admin, PSR dept, Zonal/State — see everything
+    elif current_user.is_hq():
+        # HQ user: scope to own department's submissions
+        psr_query = (psr_query.join(User)
+                     .filter(User.department == current_user.department))
+        # Within department, non-directors only see their own
+        if not (current_user.is_director() or current_user.is_evc()):
+            psr_query = psr_query.filter(ProgramReport.user_id == current_user.id)
     elif current_user.is_supervisor():
         psr_query = psr_query.join(User).filter(User.fccpc_office == current_user.fccpc_office)
     else:
@@ -917,9 +1399,14 @@ def program_dashboard():
     
     # FETCH COMPLAINTS
     complaints_query = ConsumerComplaint.query
-    
-    if current_user.is_admin() or current_user.is_director() or current_user.is_evc():
+
+    if current_user.can_view_all_reports():
         complaints = complaints_query.order_by(ConsumerComplaint.date_received.desc()).all()
+    elif current_user.is_hq():
+        q = complaints_query.join(User).filter(User.department == current_user.department)
+        if not (current_user.is_director() or current_user.is_evc()):
+            q = q.filter(ConsumerComplaint.user_id == current_user.id)
+        complaints = q.order_by(ConsumerComplaint.date_received.desc()).all()
     elif current_user.is_supervisor():
         complaints = complaints_query.join(User).filter(User.fccpc_office == current_user.fccpc_office).order_by(ConsumerComplaint.date_received.desc()).all()
     else:
@@ -985,7 +1472,7 @@ def program_dashboard():
     all_reports = psr_reports + complaints
     all_reports.sort(key=lambda x: x.date_created if hasattr(x, 'date_created') else x.date_received, reverse=True)
 
-    # ✅ PHASE 1: Add result count for filtered/searched results
+    # âœ… PHASE 1: Add result count for filtered/searched results
     result_count = len(all_reports)
 
     # CALCULATE UNIFIED STATS (without filters for accurate totals)
@@ -994,14 +1481,17 @@ def program_dashboard():
     seven_days_ago = now - timedelta(days=7)
     
     # PSR stats
+    # FIX 3: Stats use can_view_all_reports() consistently
     psr_total_query = ProgramReport.query
-    if current_user.is_admin() or current_user.is_director() or current_user.is_evc():
+    if current_user.can_view_all_reports():
         pass
+    elif current_user.is_hq():
+        psr_total_query = psr_total_query.join(User).filter(User.department == current_user.department)
     elif current_user.is_supervisor():
         psr_total_query = psr_total_query.join(User).filter(User.fccpc_office == current_user.fccpc_office)
     else:
         psr_total_query = psr_total_query.filter(ProgramReport.user_id == current_user.id)
-    
+
     all_psr = psr_total_query.all()
     psr_total = len(all_psr)
     psr_month = len([r for r in all_psr if r.date_created >= thirty_days_ago])
@@ -1010,8 +1500,10 @@ def program_dashboard():
     
     # Complaint stats
     complaints_total_query = ConsumerComplaint.query
-    if current_user.is_admin() or current_user.is_director() or current_user.is_evc():
+    if current_user.can_view_all_reports():
         all_complaints = complaints_total_query.all()
+    elif current_user.is_hq():
+        all_complaints = complaints_total_query.join(User).filter(User.department == current_user.department).all()
     elif current_user.is_supervisor():
         all_complaints = complaints_total_query.join(User).filter(User.fccpc_office == current_user.fccpc_office).all()
     else:
@@ -1030,16 +1522,23 @@ def program_dashboard():
         'user_reports': psr_user + complaints_user
     }
 
+    # Pass custom templates for dashboard filter dropdown
+    try:
+        custom_tpls_for_filter = CustomTemplate.query.filter_by(is_active=True).all()
+    except Exception:
+        custom_tpls_for_filter = []
+
     return render_template(
         "program_dashboard.html",
         reports=all_reports,
         templates=PSR_TEMPLATES,
+        custom_templates=custom_tpls_for_filter,
         stats=stats,
-        result_count=result_count,  # ✅ PHASE 1: Pass result count to template
+        result_count=result_count,
         view_title="Program Status Reports"
     )
 
-# ✅ PHASE 1: NEW ROUTE - Complaints Analytics
+# âœ… PHASE 1: NEW ROUTE - Complaints Analytics
 @app.route('/psr/analytics/complaints')
 @login_required
 def complaints_analytics():
@@ -1156,7 +1655,7 @@ def complaints_analytics():
         analytics=analytics_data
     )
 
-# ✅ PHASE 1: Export Complaints Analytics to Excel
+# âœ… PHASE 1: Export Complaints Analytics to Excel
 @app.route('/psr/analytics/complaints/export')
 @login_required
 def export_complaints_analytics():
@@ -1203,6 +1702,338 @@ def complaints_dashboard():
     flash("Complaints are now integrated into the main PSR dashboard!", "info")
     return redirect(url_for('program_dashboard'))
 
+# ==================== CUSTOM TEMPLATE BUILDER ====================
+
+@app.route('/admin/templates')
+@login_required
+def custom_templates_list():
+    if not current_user.is_admin():
+        abort(403)
+    templates = CustomTemplate.query.order_by(CustomTemplate.created_at.desc()).all()
+    # Count reports per custom template
+    for ct in templates:
+        ct.report_count = ProgramReport.query.filter_by(report_type=ct.slug).count()
+    return render_template('admin/template_builder.html',
+                           templates=templates, page='list')
+
+
+@app.route('/admin/templates/new', methods=['GET', 'POST'])
+@login_required
+def custom_template_new():
+    if not current_user.is_admin():
+        abort(403)
+
+    if request.method == 'POST':
+        data = request.get_json()
+        if not data:
+            return json.dumps({'error': 'No data received'}), 400
+
+        name     = data.get('name', '').strip()
+        code     = data.get('code', '').strip().upper()
+        category = data.get('category', 'custom').strip()
+        fields   = data.get('fields', [])
+
+        if not name or not code:
+            return json.dumps({'error': 'Name and Code are required.'}), 400
+        if not fields:
+            return json.dumps({'error': 'At least one field is required.'}), 400
+
+        # Generate unique slug
+        base_slug = slugify(name)
+        slug = base_slug
+        counter = 1
+        while CustomTemplate.query.filter_by(slug=slug).first():
+            slug = f"{base_slug}_{counter}"
+            counter += 1
+
+        try:
+            ct = CustomTemplate(
+                name=name, code=code, slug=slug,
+                category=category, created_by=current_user.id
+            )
+            db.session.add(ct)
+            db.session.flush()
+
+            for i, field_data in enumerate(fields):
+                label    = field_data.get('label', '').strip()
+                ftype    = field_data.get('type', 'text')
+                required = field_data.get('required', False)
+                opts     = field_data.get('options', [])
+                if not label:
+                    continue
+                fkey = slugify(label) or f'field_{i}'
+                cf = CustomTemplateField(
+                    template_id=ct.id,
+                    field_key=fkey,
+                    label=label,
+                    field_type=ftype,
+                    options=json.dumps(opts) if opts else None,
+                    is_required=required,
+                    sort_order=i
+                )
+                db.session.add(cf)
+
+            db.session.commit()
+            log_action("Custom Template Created", details=f"Created template: {name} ({code})")
+            return json.dumps({'success': True, 'slug': slug, 'id': ct.id})
+
+        except Exception as e:
+            db.session.rollback()
+            return json.dumps({'error': str(e)}), 500
+
+    return render_template('admin/template_builder.html', page='new')
+
+
+@app.route('/admin/templates/<int:template_id>/edit', methods=['GET', 'POST'])
+@login_required
+def custom_template_edit(template_id):
+    if not current_user.is_admin():
+        abort(403)
+    ct = CustomTemplate.query.get_or_404(template_id)
+
+    if request.method == 'POST':
+        data = request.get_json()
+        if not data:
+            return json.dumps({'error': 'No data received'}), 400
+
+        name     = data.get('name', '').strip()
+        code     = data.get('code', '').strip().upper()
+        category = data.get('category', ct.category).strip()
+        fields   = data.get('fields', [])
+        is_active = data.get('is_active', ct.is_active)
+
+        if not name or not code:
+            return json.dumps({'error': 'Name and Code are required.'}), 400
+
+        try:
+            ct.name      = name
+            ct.code      = code
+            ct.category  = category
+            ct.is_active = is_active
+
+            # Replace all fields
+            CustomTemplateField.query.filter_by(template_id=ct.id).delete()
+            for i, field_data in enumerate(fields):
+                label    = field_data.get('label', '').strip()
+                ftype    = field_data.get('type', 'text')
+                required = field_data.get('required', False)
+                opts     = field_data.get('options', [])
+                if not label:
+                    continue
+                fkey = slugify(label) or f'field_{i}'
+                cf = CustomTemplateField(
+                    template_id=ct.id,
+                    field_key=fkey,
+                    label=label,
+                    field_type=ftype,
+                    options=json.dumps(opts) if opts else None,
+                    is_required=required,
+                    sort_order=i
+                )
+                db.session.add(cf)
+
+            db.session.commit()
+            log_action("Custom Template Edited", details=f"Edited template: {name} ({code})")
+            return json.dumps({'success': True})
+
+        except Exception as e:
+            db.session.rollback()
+            return json.dumps({'error': str(e)}), 500
+
+    # GET — return template data as JSON for the builder to load
+    ct_data = {
+        'id':        ct.id,
+        'name':      ct.name,
+        'code':      ct.code,
+        'category':  ct.category,
+        'is_active': ct.is_active,
+        'fields': [
+            {
+                'label':    f.label,
+                'type':     f.field_type,
+                'required': f.is_required,
+                'options':  json.loads(f.options) if f.options else [],
+            }
+            for f in ct.fields
+        ]
+    }
+    return render_template('admin/template_builder.html',
+                           page='edit', ct=ct, ct_json=json.dumps(ct_data))
+
+
+@app.route('/admin/templates/<int:template_id>/delete', methods=['POST'])
+@login_required
+def custom_template_delete(template_id):
+    if not current_user.is_admin():
+        abort(403)
+    ct = CustomTemplate.query.get_or_404(template_id)
+    report_count = ProgramReport.query.filter_by(report_type=ct.slug).count()
+
+    if report_count > 0:
+        flash(f'Cannot delete "{ct.name}" — {report_count} report(s) exist against this template. Deactivate it instead.', 'danger')
+        return redirect(url_for('custom_templates_list'))
+
+    name = ct.name
+    try:
+        db.session.delete(ct)
+        db.session.commit()
+        log_action("Custom Template Deleted", details=f"Deleted template: {name}")
+        flash(f'Template "{name}" deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Delete failed: {str(e)}', 'danger')
+
+    return redirect(url_for('custom_templates_list'))
+
+
+@app.route('/admin/templates/<int:template_id>/toggle', methods=['POST'])
+@login_required
+def custom_template_toggle(template_id):
+    if not current_user.is_admin():
+        abort(403)
+    ct = CustomTemplate.query.get_or_404(template_id)
+    ct.is_active = not ct.is_active
+    db.session.commit()
+    state = 'activated' if ct.is_active else 'deactivated'
+    flash(f'Template "{ct.name}" {state}.', 'success')
+    return redirect(url_for('custom_templates_list'))
+
+
+# ==================== AUTO-FILL PARSE ROUTE ====================
+
+@app.route('/psr/parse-upload', methods=['POST'])
+@login_required
+def parse_autofill_upload():
+    """
+    Server-side parser for .docx files uploaded for auto-fill.
+    Returns JSON: { headers: [...], rows: [[...], [...]] }
+    """
+    from flask import jsonify
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded.'}), 400
+
+    file = request.files['file']
+    if not file.filename.lower().endswith('.docx'):
+        return jsonify({'error': 'Only .docx files are handled server-side.'}), 400
+
+    try:
+        import docx as python_docx
+        doc = python_docx.Document(file)
+
+        # Look for the first table with at least 2 rows
+        table = None
+        for t in doc.tables:
+            if len(t.rows) >= 2:
+                table = t
+                break
+
+        if table is None:
+            return jsonify({
+                'error': (
+                    'No data table found in this Word document. '
+                    'This document appears to contain narrative text only and '
+                    'cannot be auto-filled. Please fill the form manually.'
+                )
+            }), 200
+
+        # Extract headers from first row (clean bold markers, strip whitespace)
+        headers = []
+        for cell in table.rows[0].cells:
+            text = cell.text.strip()
+            # Remove duplicate merged cell text (Word sometimes duplicates)
+            if text not in headers:
+                headers.append(text)
+            else:
+                headers.append('')  # blank placeholder for merged cols
+
+        # Extract data rows
+        rows = []
+        for row in table.rows[1:]:
+            cells = [cell.text.strip() for cell in row.cells]
+            # Only include rows that have at least one non-empty cell
+            if any(c for c in cells):
+                # Trim to match header count
+                rows.append(cells[:len(headers)])
+
+        if not rows:
+            return jsonify({'error': 'Table found but contains no data rows.'}), 200
+
+        return jsonify({'headers': headers, 'rows': rows})
+
+    except Exception as e:
+        return jsonify({'error': f'Could not read Word file: {str(e)}'}), 500
+
+
+# ==================== ATTACHMENT ROUTES ====================
+
+@app.route('/attachment/download/<int:attachment_id>')
+@login_required
+def download_attachment(attachment_id):
+    """Download a file attachment"""
+    attachment = ReportAttachment.query.get_or_404(attachment_id)
+
+    # Authorization check
+    if attachment.report_id:
+        owner_id = ProgramReport.query.get_or_404(attachment.report_id).user_id
+    else:
+        owner_id = ConsumerComplaint.query.get_or_404(attachment.complaint_id).user_id
+
+    if not current_user.is_admin() and not current_user.is_supervisor() and current_user.id != owner_id:
+        abort(403)
+
+    folder_key = attachment.get_owner_id()
+    file_path = get_file_path(folder_key, attachment.filename)
+    directory = os.path.dirname(file_path)
+
+    log_action("File Downloaded", details=f"Downloaded {attachment.original_filename} (attachment #{attachment.id})")
+
+    return send_from_directory(
+        directory,
+        attachment.filename,
+        as_attachment=True,
+        download_name=attachment.original_filename
+    )
+
+
+@app.route('/attachment/delete/<int:attachment_id>', methods=['POST'])
+@login_required
+def delete_attachment(attachment_id):
+    """Delete a file attachment"""
+    attachment = ReportAttachment.query.get_or_404(attachment_id)
+
+    # Determine parent report/complaint and redirect target
+    if attachment.report_id:
+        parent = ProgramReport.query.get_or_404(attachment.report_id)
+        owner_id = parent.user_id
+        redirect_url = url_for('view_program_report', report_id=parent.id)
+    else:
+        parent = ConsumerComplaint.query.get_or_404(attachment.complaint_id)
+        owner_id = parent.user_id
+        redirect_url = url_for('view_program_report', report_id=parent.id) + '?type=complaint'
+
+    if not current_user.is_admin() and current_user.id != owner_id:
+        abort(403)
+
+    folder_key = attachment.get_owner_id()
+    original_name = attachment.original_filename
+
+    # Delete physical file
+    delete_file(folder_key, attachment.filename)
+
+    # Delete database record
+    try:
+        db.session.delete(attachment)
+        db.session.commit()
+        log_action("File Deleted", details=f"Deleted {original_name} (attachment #{attachment_id})")
+        flash(f'"{original_name}" deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting file: {str(e)}', 'danger')
+
+    return redirect(redirect_url)
+
+
 # ==================== VIEW ROUTES ====================
 
 @app.route('/psr/view/<int:report_id>')
@@ -1247,8 +2078,9 @@ def view_program_report(report_id):
         
         template_slug = report.report_type
         
-        if template_slug in PSR_DYNAMIC_TEMPLATES:
-            config = PSR_DYNAMIC_TEMPLATES[template_slug]
+        all_dynamic = get_all_dynamic_templates()
+        if template_slug in all_dynamic:
+            config = all_dynamic[template_slug]
             rows = []
             for row in report.psr_rows:
                 row_data = {}
@@ -1355,11 +2187,12 @@ def export_single_psr(report_id):
     if not current_user.is_admin() and report.user_id != current_user.id:
         abort(403)
     
-    if report.report_type not in PSR_DYNAMIC_TEMPLATES:
+    all_dynamic = get_all_dynamic_templates()
+    if report.report_type not in all_dynamic:
         flash("Export only available for dynamic templates", "warning")
         return redirect(url_for("view_program_report", report_id=report.id))
     
-    config = PSR_DYNAMIC_TEMPLATES[report.report_type]
+    config = all_dynamic[report.report_type]
     fields = config["fields"]
     
     output = StringIO()
@@ -1399,4 +2232,6 @@ def forbidden(e):
 # ==================== APPLICATION ENTRY POINT ====================
 
 if __name__ == '__main__':
+    with app.app_context():
+        init_upload_folder()
     app.run(debug=True)

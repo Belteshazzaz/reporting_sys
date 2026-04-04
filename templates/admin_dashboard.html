@@ -1,48 +1,60 @@
-{% extends "base.html" %} {% block title %}Admin Portal | User Management{%
-endblock %} {% block content %}
+{% extends "base.html" %} {% block title %}Admin Portal | User Management{% endblock %}
+{% block content %}
 <div class="container-fluid">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3>Admin Portal â€“ User Management</h3>
+    <h3>Admin Portal — User Management</h3>
     <a href="{{ url_for('register') }}" class="btn btn-sm btn-success">
       <i class="bi bi-person-plus"></i> Create New User
     </a>
   </div>
 
-  <!-- Flash messages -->
-  {% with messages = get_flashed_messages(with_categories=true) %} {% if
-  messages %} {% for category, message in messages %}
-  <div
-    class="alert alert-{{ 'warning' if category == 'warning' else category }}"
-  >
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
+  <div class="alert alert-{{ 'warning' if category == 'warning' else category }}">
     {{ message | safe }}
   </div>
   {% endfor %} {% endif %} {% endwith %}
 
   <form method="GET" class="row g-2 mb-3">
-    <div class="col-md-4">
-      <input
-        type="text"
-        name="search"
-        class="form-control"
-        placeholder="Search name or email"
-      />
-    </div>
-
     <div class="col-md-3">
+      <input type="text" name="search" class="form-control"
+             placeholder="Search name or email"
+             value="{{ request.args.get('search', '') }}" />
+    </div>
+    <div class="col-md-2">
       <select name="role" class="form-select">
         <option value="">All Roles</option>
-        <option value="1">Agent</option>
-        <option value="2">Supervisor</option>
-        <option value="3">Director</option>
-        <option value="4">EVC</option>
-        <option value="9">Admin</option>
+        <option value="1"  {% if request.args.get('role')=='1'  %}selected{% endif %}>Agent</option>
+        <option value="2"  {% if request.args.get('role')=='2'  %}selected{% endif %}>Supervisor</option>
+        <option value="3"  {% if request.args.get('role')=='3'  %}selected{% endif %}>Director</option>
+        <option value="4"  {% if request.args.get('role')=='4'  %}selected{% endif %}>EVC</option>
+        <option value="9"  {% if request.args.get('role')=='9'  %}selected{% endif %}>Admin</option>
       </select>
     </div>
-
+    <div class="col-md-2">
+      <select name="office_type" class="form-select">
+        <option value="">All Offices</option>
+        <option value="HQ"          {% if request.args.get('office_type')=='HQ'          %}selected{% endif %}>HQ — Abuja</option>
+        <option value="Zonal/State" {% if request.args.get('office_type')=='Zonal/State' %}selected{% endif %}>Zonal / State</option>
+      </select>
+    </div>
     <div class="col-md-2">
       <button class="btn btn-primary w-100">Filter</button>
     </div>
+    <div class="col-md-1">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary w-100">Clear</a>
+    </div>
   </form>
+
+  <!-- FIX: Summary badges show DB totals, not filtered counts -->
+  <div class="d-flex gap-2 mb-3 flex-wrap">
+    <span class="badge bg-secondary fs-6" title="All users in database">Total: {{ total_users }}</span>
+    <span class="badge bg-primary fs-6" title="HQ Abuja staff">HQ: {{ total_hq }}</span>
+    <span class="badge bg-warning text-dark fs-6" title="Field office staff">Zonal/State: {{ total_zonal }}</span>
+    <span class="badge bg-success fs-6" title="Active accounts">Active: {{ total_active }}</span>
+    {% if users|length != total_users %}
+    <span class="badge bg-info fs-6">Showing: {{ users|length }} (filtered)</span>
+    {% endif %}
+  </div>
 
   <div class="card shadow-sm">
     <div class="card-body p-0">
@@ -54,15 +66,15 @@ endblock %} {% block content %}
               <th>ID</th>
               <th>Name</th>
               <th>Email</th>
+              <th>Office Type</th>
+              <th>Department / Office</th>
               <th>Current Role</th>
-              <th>Change Role</th>
-              <th>Security</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for user in users %}
             <tr>
-              <!-- Status -->
               <td>
                 {% if user.is_enabled %}
                 <span class="badge bg-success">Active</span>
@@ -72,100 +84,80 @@ endblock %} {% block content %}
               </td>
 
               <td>{{ user.id }}</td>
-              <td>{{ user.name }}</td>
+
+              <td>
+                {{ user.name }}
+                {% if user.id == current_user.id %}
+                <span class="text-muted small fst-italic">(you)</span>
+                {% endif %}
+              </td>
+
               <td>{{ user.email }}</td>
+
+              <!-- Office Type -->
+              <td>
+                {% if user.office_type == 'HQ' %}
+                <span class="badge bg-primary">🏛️ HQ</span>
+                {% else %}
+                <span class="badge bg-warning text-dark">🗺️ Zonal/State</span>
+                {% endif %}
+              </td>
+
+              <!-- Department / Office -->
+              <td>
+                {% if user.department %}
+                <span class="fw-semibold small">{{ user.department }}</span>
+                {% else %}
+                <span class="text-muted small">{{ user.fccpc_office or '—' }}</span>
+                {% endif %}
+              </td>
 
               <!-- Role Display -->
               <td>
                 {% if user.role == 9 %}
-                <span class="badge bg-success">Admin</span> {% elif user.role ==
-                4 %} <span class="badge bg-dark">EVC</span> {% elif user.role ==
-                3 %} <span class="badge bg-primary">Director</span> {% elif
-                user.role == 2 %}
-                <span class="badge bg-info text-dark">Supervisor</span> {% else
-                %}
+                <span class="badge bg-success">Admin</span>
+                {% elif user.role == 4 %}
+                <span class="badge bg-dark">EVC</span>
+                {% elif user.role == 3 %}
+                <span class="badge bg-primary">Director</span>
+                {% elif user.role == 2 %}
+                <span class="badge bg-info text-dark">Supervisor</span>
+                {% else %}
                 <span class="badge bg-secondary">Agent</span>
                 {% endif %}
               </td>
 
-              <!-- Role Management -->
-              <td>
-                <div
-                  class="d-grid"
-                  style="grid-template-columns: repeat(3, auto); gap: 4px"
-                >
-                  <a
-                    href="{{ url_for('elevate_user', user_id=user.id, new_role=1) }}"
-                    class="btn btn-sm btn-outline-secondary"
-                    >Agent</a
-                  >
-
-                  <a
-                    href="{{ url_for('elevate_user', user_id=user.id, new_role=2) }}"
-                    class="btn btn-sm btn-outline-info"
-                    >Supervisor</a
-                  >
-
-                  <a
-                    href="{{ url_for('elevate_user', user_id=user.id, new_role=3) }}"
-                    class="btn btn-sm btn-outline-primary"
-                    >Director</a
-                  >
-
-                  <a
-                    href="{{ url_for('elevate_user', user_id=user.id, new_role=4) }}"
-                    class="btn btn-sm btn-outline-dark"
-                    >EVC</a
-                  >
-
-                  <a
-                    href="{{ url_for('elevate_user', user_id=user.id, new_role=9) }}"
-                    class="btn btn-sm btn-outline-success fw-bold"
-                    >Admin</a
-                  >
-                </div>
-              </td>
-
-              <!-- Security -->
+              <!-- Actions -->
               <td>
                 <div class="d-flex flex-column gap-1">
-                  <!-- Reset password -->
-                  <form
-                    method="POST"
-                    action="{{ url_for('reset_password', user_id=user.id) }}"
-                  >
-                    <button
-                      type="submit"
-                      class="btn btn-sm btn-outline-danger"
-                      onclick="return confirm('Reset password for {{ user.name }}?');"
-                    >
-                      <i class="bi bi-key"></i> Reset
-                    </button>
-                  </form>
 
-                  <!-- Change Password Button -->
-                  <a
-                    href="{{ url_for('change_password', user_id=user.id) }}"
-                    class="btn btn-info btn-sm"
-                  >
+                  <!-- Edit office/dept/role -->
+                  <a href="{{ url_for('edit_user', user_id=user.id) }}"
+                     class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> Edit Dept/Role
+                  </a>
+
+                  <!-- Change Password -->
+                  <a href="{{ url_for('change_password', user_id=user.id) }}"
+                     class="btn btn-info btn-sm">
                     <i class="bi bi-key"></i> Change Password
                   </a>
 
                   <!-- Suspend / Reactivate -->
-                  <form
-                    method="POST"
-                    action="{{ url_for('toggle_user_status', user_id=user.id) }}"
-                  >
-                    <button
-                      type="submit"
-                      class="btn btn-sm {% if user.is_enabled %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
-                      onclick="return confirm('Change account status for {{ user.name }}?');"
-                    >
+                  {% if user.id != current_user.id %}
+                  <form method="POST" action="{{ url_for('toggle_user_status', user_id=user.id) }}">
+                    <button type="submit"
+                            class="btn btn-sm {% if user.is_enabled %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                            onclick="return confirm('Change account status for {{ user.name }}?');">
                       {% if user.is_enabled %}
-                      <i class="bi bi-lock"></i> Suspend {% else %}
-                      <i class="bi bi-unlock"></i> Reactivate {% endif %}
+                      <i class="bi bi-lock"></i> Suspend
+                      {% else %}
+                      <i class="bi bi-unlock"></i> Reactivate
+                      {% endif %}
                     </button>
                   </form>
+                  {% endif %}
+
                 </div>
               </td>
             </tr>
@@ -175,5 +167,5 @@ endblock %} {% block content %}
       </div>
     </div>
   </div>
-  {% endblock %}
 </div>
+{% endblock %}

@@ -305,7 +305,274 @@
       font-size: 20px;
     }
   }
-</style>
+
+  /* ── File Upload ── */
+  .attach-info-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #f0f9f4;
+    border: 1px solid #b7dfc7;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    color: #333;
+  }
+
+  .file-drop-zone {
+    border: 2.5px dashed #adb5bd;
+    border-radius: 10px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafafa;
+  }
+
+  .file-drop-zone:hover,
+  .file-drop-zone.dragover {
+    border-color: #006837;
+    background: #f0f9f4;
+  }
+
+  .file-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .file-preview-item .file-name {
+    flex: 1;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-preview-item .file-size {
+    color: #6c757d;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .btn-remove-file {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  .btn-remove-file:hover { color: #a71d2a; }
+
+  /* ── Auto-fill Import ── */
+  .import-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: #f0f9f4;
+    border: 1.5px dashed #006837;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 14px;
+  }
+  .import-bar.visible { display: flex; }
+
+  .btn-import {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    background: white;
+    border: 2px solid #006837;
+    color: #006837;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .btn-import:hover { background: #006837; color: white; }
+
+  .import-hint {
+    font-size: 13px;
+    color: #555;
+  }
+
+  /* Preview Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal-box {
+    background: white;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 900px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+
+  .modal-header {
+    background: #006837;
+    color: white;
+    padding: 16px 22px;
+    border-radius: 14px 14px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-header h3 { margin: 0; font-size: 17px; }
+
+  .btn-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.8;
+  }
+  .btn-modal-close:hover { opacity: 1; }
+
+  .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+
+  .preview-info {
+    background: #e8f5e9;
+    border-left: 4px solid #006837;
+    padding: 10px 14px;
+    border-radius: 5px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .preview-warning {
+    background: #fff8e1;
+    border-left: 4px solid #ffc107;
+    padding: 10px 14px;
+    border-radius: 5px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .preview-error {
+    background: #fdecea;
+    border-left: 4px solid #dc3545;
+    padding: 12px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .preview-table-wrap { overflow-x: auto; }
+
+  .preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .preview-table th {
+    background: #006837;
+    color: white;
+    padding: 9px 10px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .preview-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #dee2e6;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .preview-table tr:hover td { background: #f8f9fa; }
+
+  .col-matched { color: #006837; font-weight: 700; }
+  .col-unmatched { color: #adb5bd; }
+
+  .badge-matched {
+    background: #e8f5e9;
+    color: #006837;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 5px;
+  }
+
+  .badge-skipped {
+    background: #f8f9fa;
+    color: #adb5bd;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 5px;
+  }
+
+  .btn-confirm-fill {
+    background: #006837;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 7px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .btn-confirm-fill:hover { background: #005028; }
+
+  .btn-cancel-import {
+    background: white;
+    color: #6c757d;
+    border: 1.5px solid #dee2e6;
+    padding: 10px 20px;
+    border-radius: 7px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .btn-cancel-import:hover { background: #f8f9fa; }</style>
 {% endblock %} {% block content %}
 <div class="form-container">
   <!-- Breadcrumb -->
@@ -336,6 +603,7 @@
         method="POST"
         action="{{ url_for('program_report_form') }}"
         id="reportForm"
+        enctype="multipart/form-data"
       >
         <!-- SECTION 1: Report Type Selection -->
         <div class="form-section">
@@ -368,6 +636,42 @@
             </select>
             <div class="form-help">
               Select the type of report you want to submit
+            </div>
+
+            <!-- Import from File Bar -->
+            <div class="import-bar" id="importBar">
+              <i class="bi bi-file-earmark-arrow-up" style="font-size:22px; color:#006837; flex-shrink:0;"></i>
+              <div class="import-hint flex-grow-1">
+                <strong>Have a file with this data?</strong>
+                Upload an Excel, CSV, or Word file to auto-fill the form.
+              </div>
+              <button type="button" class="btn-import" onclick="document.getElementById('autofillFileInput').click()">
+                <i class="bi bi-upload"></i> Import from File
+              </button>
+              <input type="file" id="autofillFileInput"
+                     accept=".xlsx,.xls,.csv,.docx"
+                     style="display:none"
+                     onchange="handleAutofillUpload(this)" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto-fill Preview Modal -->
+        <div class="modal-overlay" id="autofillModal">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h3><i class="bi bi-table"></i> Import Preview — <span id="modalFileName"></span></h3>
+              <button type="button" class="btn-modal-close" onclick="closeAutofillModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn-cancel-import" onclick="closeAutofillModal()">
+                Cancel
+              </button>
+              <button type="button" class="btn-confirm-fill" id="confirmFillBtn" onclick="confirmAutofill()" style="display:none">
+                <i class="bi bi-check-circle"></i> Confirm &amp; Fill Form
+              </button>
             </div>
           </div>
         </div>
@@ -481,14 +785,21 @@
                 ></textarea>
               </div>
               <div class="form-group">
-                <label class="form-label"
-                  >Status of Complaint (with Date & Time)</label
-                >
+                <label class="form-label">Status of Complaint</label>
                 <textarea
-                  name="status_date_time"
+                  name="status_description"
                   class="form-control"
                   rows="2"
+                  placeholder="e.g. Under Investigation, Referred to Legal, Pending Response..."
                 ></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Date &amp; Time of Status</label>
+                <input
+                  type="datetime-local"
+                  name="status_date_time"
+                  class="form-control"
+                />
               </div>
               <div class="form-group">
                 <label class="form-label">Value of Complaints (₦)</label>
@@ -751,7 +1062,7 @@
             <textarea name="objective" class="form-control" rows="4"></textarea>
           </div>
 
-          <!-- ✅ PHASE 1: Updated Date Fields Row -->
+          <!-- âœ… PHASE 1: Updated Date Fields Row -->
           <div class="row">
             <div class="col-md-6 form-group">
               <label class="form-label">Date Started</label>
@@ -781,7 +1092,7 @@
             </div>
           </div>
 
-          <!-- ✅ PHASE 1: Status Percentages Row -->
+          <!-- âœ… PHASE 1: Status Percentages Row -->
           <div class="row">
             <div class="col-md-6 form-group">
               <label class="form-label">Previous Status (%)</label>
@@ -828,6 +1139,49 @@
           </div>
         </div>
 
+        <!-- File Attachments Section -->
+        <div class="form-section" id="file_attachments_section">
+          <div class="form-section-title">
+            <span class="form-section-number">3</span>
+            Attach Supporting Documents <span style="font-weight:400; font-size:14px; color:#6c757d;">(Optional)</span>
+          </div>
+
+          <div class="attach-info-box">
+            <i class="bi bi-info-circle-fill" style="color:#006837; font-size:18px;"></i>
+            <div>
+              <strong>Upload Guidelines:</strong>
+              Up to <strong>5 files</strong> per report &nbsp;·&nbsp;
+              Max <strong>10 MB</strong> each &nbsp;·&nbsp;
+              Allowed: <strong>PDF, Word, Excel, JPG, PNG</strong>
+            </div>
+          </div>
+
+          <!-- Drop Zone -->
+          <div class="file-drop-zone" id="fileDropZone"
+               onclick="document.getElementById('fileInput').click()"
+               ondragover="handleDragOver(event)"
+               ondragleave="handleDragLeave(event)"
+               ondrop="handleDrop(event)">
+            <i class="bi bi-cloud-upload-fill" style="font-size:36px; color:#006837; display:block; margin-bottom:8px;"></i>
+            <strong>Drag &amp; drop files here</strong>
+            <p style="margin:6px 0 0; color:#6c757d; font-size:13px;">or click to browse</p>
+            <input type="file" id="fileInput" name="attachments"
+                   multiple
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                   style="display:none"
+                   onchange="handleFileSelect(this.files)" />
+          </div>
+
+          <!-- Selected Files Preview -->
+          <div id="selectedFilesList" style="display:none; margin-top:14px;">
+            <div style="font-weight:600; margin-bottom:8px; color:#006837;">
+              <i class="bi bi-paperclip"></i>
+              Selected Files: <span id="fileCount">0</span> / 5
+            </div>
+            <div id="filesContainer"></div>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="form-section d-flex gap-2">
           <button
@@ -835,6 +1189,7 @@
             name="action"
             value="draft"
             class="btn-submit btn-outline"
+            id="draftBtn"
           >
             <i class="bi bi-save"></i>
             Save as Draft
@@ -886,6 +1241,9 @@
 
   // Toggle complaint template-specific fields
   function toggleComplaintFields(slug) {
+    // Hide attachment section for complaints (not needed)
+    const attachSection = document.getElementById('file_attachments_section');
+    if (attachSection) attachSection.style.display = 'none';
     const t3 = document.getElementById('fields_t3_only');
     const t4 = document.getElementById('fields_t4_only');
     const t5 = document.getElementById('fields_t5_only');
@@ -920,6 +1278,10 @@
 
     const commonContainer = document.getElementById('common_fields_container');
     const hrElement = document.getElementById('common_fields_hr');
+
+    // Show attachment section by default (hidden for complaints below)
+    const attachSection = document.getElementById('file_attachments_section');
+    if (attachSection) attachSection.style.display = '';
 
     // Hide all unique sections first
     document.querySelectorAll('.unique-fields').forEach(div => {
@@ -1056,7 +1418,7 @@
     });
   }
 
-  // ✅ PHASE 1: Date validation - ensure date_ended >= date_started
+  // âœ… PHASE 1: Date validation - ensure date_ended >= date_started
   document.addEventListener('DOMContentLoaded', function() {
     const dateStarted = document.getElementById('date_started');
     const dateEnded = document.getElementById('date_ended');
@@ -1085,9 +1447,509 @@
 
   // Form submission with loading state
   document.getElementById('reportForm').addEventListener('submit', function(e) {
-    const btn = document.getElementById('submitBtn');
-    btn.classList.add('btn-loading');
-    btn.disabled = true;
+    const submitBtn = document.getElementById('submitBtn');
+    const draftBtn  = document.getElementById('draftBtn');
+    submitBtn.classList.add('btn-loading');
+    submitBtn.disabled = true;
+    if (draftBtn) draftBtn.disabled = true;
+  });
+
+  // ── File Upload Logic ──
+  let selectedFiles = [];
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  function getFileIcon(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    if (ext === 'pdf') return 'bi-file-earmark-pdf-fill text-danger';
+    if (['doc','docx'].includes(ext)) return 'bi-file-earmark-word-fill text-primary';
+    if (['xls','xlsx'].includes(ext)) return 'bi-file-earmark-excel-fill text-success';
+    if (['jpg','jpeg','png'].includes(ext)) return 'bi-file-earmark-image-fill text-info';
+    return 'bi-file-earmark-fill text-secondary';
+  }
+
+  function renderFileList() {
+    const container = document.getElementById('filesContainer');
+    const listDiv = document.getElementById('selectedFilesList');
+    const countEl = document.getElementById('fileCount');
+
+    countEl.textContent = selectedFiles.length;
+
+    if (selectedFiles.length === 0) {
+      listDiv.style.display = 'none';
+      return;
+    }
+
+    listDiv.style.display = 'block';
+    container.innerHTML = '';
+
+    selectedFiles.forEach((file, idx) => {
+      const item = document.createElement('div');
+      item.className = 'file-preview-item';
+      item.innerHTML = `
+        <i class="bi ${getFileIcon(file.name)}" style="font-size:20px;"></i>
+        <span class="file-name" title="${file.name}">${file.name}</span>
+        <span class="file-size">${formatBytes(file.size)}</span>
+        <button type="button" class="btn-remove-file" onclick="removeFile(${idx})" title="Remove">
+          <i class="bi bi-x-circle-fill"></i>
+        </button>
+      `;
+      container.appendChild(item);
+    });
+
+    syncFilesToInput();
+  }
+
+  function syncFilesToInput() {
+    const input = document.getElementById('fileInput');
+    const dt = new DataTransfer();
+    selectedFiles.forEach(f => dt.items.add(f));
+    input.files = dt.files;
+  }
+
+  function addFiles(newFiles) {
+    const MAX = 5;
+    for (const file of newFiles) {
+      if (selectedFiles.length >= MAX) {
+        alert('Maximum 5 files allowed.');
+        break;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`"${file.name}" exceeds 10 MB and was skipped.`);
+        continue;
+      }
+      selectedFiles.push(file);
+    }
+    renderFileList();
+  }
+
+  function removeFile(idx) {
+    selectedFiles.splice(idx, 1);
+    renderFileList();
+  }
+
+  function handleFileSelect(files) {
+    addFiles(Array.from(files));
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('fileDropZone').classList.add('dragover');
+  }
+
+  function handleDragLeave(e) {
+    document.getElementById('fileDropZone').classList.remove('dragover');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('fileDropZone').classList.remove('dragover');
+    addFiles(Array.from(e.dataTransfer.files));
+  }
+
+  // ══════════════════════════════════════════════
+  // AUTO-FILL SYSTEM
+  // ══════════════════════════════════════════════
+
+  // Use the already-declared dynamicTemplates (same data, avoid duplication)
+  const DYNAMIC_TEMPLATES = dynamicTemplates;
+
+  // Templates that are NOT yet configured for auto-fill
+  const AUTOFILL_NOT_CONFIGURED = [
+    'progress_report', 'targets_achieved', 'enforcement_operations',
+    'complaints_received', 'complaints_ongoing', 'complaints_resolved'
+  ];
+
+  let parsedAutofillData = null; // { headers: [], rows: [[...]] }
+  let matchedColumns = [];       // [{fileCol, templateKey, templateLabel}]
+
+  // Show/hide import bar when template is selected
+  // Hook into existing showUniqueFields
+  const _originalShowUniqueFields = showUniqueFields;
+  showUniqueFields = function() {
+    _originalShowUniqueFields();
+    const slug = document.getElementById('report_type').value;
+    const bar = document.getElementById('importBar');
+    if (slug) {
+      bar.classList.add('visible');
+    } else {
+      bar.classList.remove('visible');
+    }
+    // Reset any previous autofill state
+    parsedAutofillData = null;
+    matchedColumns = [];
+    document.getElementById('autofillFileInput').value = '';
+  };
+
+  function normalise(str) {
+    return str.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function fuzzyMatch(fileHeader, templateFields) {
+    // Returns best matching field key or null
+    const norm = normalise(fileHeader);
+    let best = null;
+    let bestScore = 0;
+
+    for (const field of templateFields) {
+      const labelNorm = normalise(field.label);
+      const keyNorm = normalise(field.key);
+
+      // Exact match on label
+      if (norm === labelNorm) return field.key;
+
+      // Exact match on key
+      if (norm === keyNorm) return field.key;
+
+      // Partial match — label contains header or vice versa
+      let score = 0;
+      if (labelNorm.includes(norm) || norm.includes(labelNorm)) score = 0.9;
+      else if (keyNorm.includes(norm) || norm.includes(keyNorm)) score = 0.8;
+      else {
+        // Word overlap scoring
+        const normWords = norm.split(' ');
+        const labelWords = labelNorm.split(' ');
+        const overlap = normWords.filter(w => w.length > 2 && labelWords.includes(w)).length;
+        if (overlap > 0) score = overlap / Math.max(normWords.length, labelWords.length);
+      }
+
+      if (score > bestScore) { bestScore = score; best = field.key; }
+    }
+
+    return bestScore >= 0.4 ? best : null;
+  }
+
+  async function handleAutofillUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const slug = document.getElementById('report_type').value;
+    if (!slug) {
+      alert('Please select a report template first.');
+      input.value = '';
+      return;
+    }
+
+    document.getElementById('modalFileName').textContent = file.name;
+    openAutofillModal();
+    showModalLoading();
+
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    // Not-yet-configured templates — show friendly message
+    if (AUTOFILL_NOT_CONFIGURED.includes(slug)) {
+      showModalNotConfigured(slug);
+      return;
+    }
+
+    try {
+      if (ext === 'docx') {
+        await parseDocx(file, slug);
+      } else if (['xlsx', 'xls'].includes(ext)) {
+        await parseExcel(file, slug);
+      } else if (ext === 'csv') {
+        await parseCsv(file, slug);
+      } else {
+        showModalError('Unsupported file format. Please use .xlsx, .xls, .csv, or .docx');
+      }
+    } catch (err) {
+      showModalError('Could not read file: ' + err.message);
+    }
+
+    input.value = '';
+  }
+
+  // ── Excel Parser (SheetJS via CDN) ──
+  async function parseExcel(file, slug) {
+    if (!window.XLSX) {
+      // Load SheetJS dynamically
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+    }
+    const buffer = await file.arrayBuffer();
+    const wb = XLSX.read(buffer, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if (!data || data.length < 2) {
+      showModalError('File appears to be empty or has no data rows.');
+      return;
+    }
+    const headers = data[0].map(h => String(h).trim());
+    const rows = data.slice(1).filter(r => r.some(c => String(c).trim() !== ''));
+    processParsedData(headers, rows, slug);
+  }
+
+  // ── CSV Parser (PapaParse via CDN) ──
+  async function parseCsv(file, slug) {
+    if (!window.Papa) {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js');
+    }
+    return new Promise((resolve) => {
+      Papa.parse(file, {
+        header: false,
+        skipEmptyLines: true,
+        complete: (result) => {
+          if (!result.data || result.data.length < 2) {
+            showModalError('CSV appears to be empty or has no data rows.');
+            resolve(); return;
+          }
+          const headers = result.data[0].map(h => String(h).trim());
+          const rows = result.data.slice(1);
+          processParsedData(headers, rows, slug);
+          resolve();
+        },
+        error: (err) => { showModalError('CSV parse error: ' + err.message); resolve(); }
+      });
+    });
+  }
+
+  // ── Word Parser (server-side) ──
+  async function parseDocx(file, slug) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('slug', slug);
+
+    const resp = await fetch('{{ url_for("parse_autofill_upload") }}', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      showModalError(err.error || 'Server error parsing Word file.');
+      return;
+    }
+
+    const result = await resp.json();
+    if (result.error) { showModalError(result.error); return; }
+    processParsedData(result.headers, result.rows, slug);
+  }
+
+  // ── Core: match columns to template fields and render preview ──
+  function processParsedData(headers, rows, slug) {
+    const config = DYNAMIC_TEMPLATES[slug];
+    if (!config) { showModalError('No template configuration found.'); return; }
+
+    parsedAutofillData = { headers, rows };
+    matchedColumns = headers.map(h => {
+      const key = fuzzyMatch(h, config.fields);
+      const field = key ? config.fields.find(f => f.key === key) : null;
+      return { fileCol: h, templateKey: key, templateLabel: field ? field.label : null };
+    });
+
+    const matchCount = matchedColumns.filter(m => m.templateKey).length;
+    renderPreview(headers, rows, matchCount, config.title);
+  }
+
+  function renderPreview(headers, rows, matchCount, templateTitle) {
+    const body = document.getElementById('modalBody');
+    const confirmBtn = document.getElementById('confirmFillBtn');
+
+    if (matchCount === 0) {
+      body.innerHTML = `
+        <div class="preview-error">
+          <strong>No matching columns found.</strong><br>
+          None of the columns in your file matched the fields for <em>${templateTitle}</em>.<br>
+          Please check your file headers match the template field names.
+        </div>
+        <p style="font-size:13px; color:#555;">Expected columns include: 
+          <strong>${matchedColumns.slice(0,4).map(m=>m.fileCol).join(', ')}</strong>...
+        </p>`;
+      confirmBtn.style.display = 'none';
+      return;
+    }
+
+    const displayRows = rows.slice(0, 10);
+    const hasMore = rows.length > 10;
+
+    let headerCells = matchedColumns.map(m =>
+      m.templateKey
+        ? `<th class="col-matched">${m.fileCol} <span class="badge-matched">✓ ${m.templateLabel}</span></th>`
+        : `<th class="col-unmatched">${m.fileCol} <span class="badge-skipped">skipped</span></th>`
+    ).join('');
+
+    let bodyRows = displayRows.map(row =>
+      '<tr>' + row.map((cell, i) =>
+        matchedColumns[i]?.templateKey
+          ? `<td>${String(cell).substring(0, 80)}</td>`
+          : `<td style="color:#adb5bd">${String(cell).substring(0, 80)}</td>`
+      ).join('') + '</tr>'
+    ).join('');
+
+    body.innerHTML = `
+      <div class="preview-info">
+        <strong>✓ ${matchCount} of ${headers.length} columns matched</strong> to template fields.
+        ${rows.length} data row(s) detected. ${hasMore ? `Showing first 10 of ${rows.length}.` : ''}
+        Unmatched columns (greyed) will be ignored.
+      </div>
+      ${matchCount < headers.length ? `
+      <div class="preview-warning">
+        <strong>Note:</strong> Some columns could not be matched and will be skipped.
+        You can fill those fields manually after import.
+      </div>` : ''}
+      <div class="preview-table-wrap">
+        <table class="preview-table">
+          <thead><tr>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+      ${hasMore ? `<p style="font-size:12px;color:#6c757d;margin-top:8px;">... and ${rows.length - 10} more rows</p>` : ''}
+    `;
+
+    confirmBtn.style.display = 'inline-flex';
+  }
+
+  function confirmAutofill() {
+    if (!parsedAutofillData) return;
+    const { rows } = parsedAutofillData;
+
+    closeAutofillModal();
+
+    // ── Date normaliser ──
+    // Accepts: DD/MM/YYYY, DD-MM-YYYY, MM/DD/YYYY, YYYY-MM-DD, Excel serial numbers
+    // Returns: YYYY-MM-DD for date inputs, YYYY-MM-DDTHH:MM for datetime-local
+    function toInputDate(val, inputType) {
+      val = String(val).trim();
+
+      // Excel serial number (e.g. 45678)
+      if (/^\d{5}$/.test(val)) {
+        const excelEpoch = new Date(1899, 11, 30);
+        const d = new Date(excelEpoch.getTime() + parseInt(val) * 86400000);
+        const iso = d.toISOString().split('T')[0];
+        return inputType === 'datetime-local' ? iso + 'T00:00' : iso;
+      }
+
+      // Already ISO: YYYY-MM-DD or YYYY-MM-DDTHH:MM
+      if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+        return inputType === 'datetime-local'
+          ? (val.includes('T') ? val.slice(0,16) : val + 'T00:00')
+          : val.slice(0,10);
+      }
+
+      // DD/MM/YYYY or DD-MM-YYYY (Nigerian standard)
+      const dmyMatch = val.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+      if (dmyMatch) {
+        const [, d, m, y] = dmyMatch;
+        const iso = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+        return inputType === 'datetime-local' ? iso + 'T00:00' : iso;
+      }
+
+      // MM/DD/YYYY fallback
+      const mdyMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (mdyMatch) {
+        const [, m, d, y] = mdyMatch;
+        const iso = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+        return inputType === 'datetime-local' ? iso + 'T00:00' : iso;
+      }
+
+      // Fallback: let the browser try
+      try {
+        const parsed = new Date(val);
+        if (!isNaN(parsed)) {
+          const iso = parsed.toISOString().split('T')[0];
+          return inputType === 'datetime-local' ? iso + 'T00:00' : iso;
+        }
+      } catch(e) {}
+
+      return val; // return as-is if nothing worked
+    }
+
+    // Clear existing dynamic rows
+    const container = document.getElementById('dynamic_rows_container');
+    container.innerHTML = '';
+
+    // Add one row per data row
+    rows.forEach((row, rowIdx) => {
+      addDynamicRow();
+      const rowEl = container.children[rowIdx];
+      if (!rowEl) return;
+
+      matchedColumns.forEach((mapping, colIdx) => {
+        if (!mapping.templateKey) return;
+        if (mapping.templateKey === 'sn') return; // auto-generated, never overwrite
+        const input = rowEl.querySelector(`[name="${mapping.templateKey}"]`);
+        if (input) {
+          const val = row[colIdx] !== undefined ? String(row[colIdx]).trim() : '';
+          if ((input.type === 'date' || input.type === 'datetime-local') && val) {
+            input.value = toInputDate(val, input.type);
+          } else {
+            input.value = val;
+          }
+        }
+      });
+    });
+
+    // Flash confirmation
+    const bar = document.getElementById('importBar');
+    bar.style.background = '#e8f5e9';
+    bar.style.borderColor = '#28a745';
+    bar.innerHTML = `
+      <i class="bi bi-check-circle-fill" style="color:#28a745;font-size:22px;flex-shrink:0;"></i>
+      <div style="font-size:14px;">
+        <strong style="color:#006837;">Form filled from file!</strong>
+        ${rows.length} row(s) imported. Review the entries below and edit if needed before submitting.
+      </div>
+    `;
+  }
+
+  // ── Modal helpers ──
+  function openAutofillModal() {
+    document.getElementById('autofillModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAutofillModal() {
+    document.getElementById('autofillModal').classList.remove('open');
+    document.body.style.overflow = '';
+    document.getElementById('confirmFillBtn').style.display = 'none';
+  }
+
+  function showModalLoading() {
+    document.getElementById('modalBody').innerHTML = `
+      <div style="text-align:center; padding:40px; color:#006837;">
+        <div style="font-size:32px; margin-bottom:12px;">⏳</div>
+        <strong>Reading file...</strong>
+      </div>`;
+    document.getElementById('confirmFillBtn').style.display = 'none';
+  }
+
+  function showModalError(msg) {
+    document.getElementById('modalBody').innerHTML = `
+      <div class="preview-error"><strong>Error:</strong> ${msg}</div>`;
+    document.getElementById('confirmFillBtn').style.display = 'none';
+  }
+
+  function showModalNotConfigured(slug) {
+    const label = slug.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    document.getElementById('modalBody').innerHTML = `
+      <div class="preview-warning" style="font-size:14px; line-height:1.7;">
+        <strong>Auto-fill not yet configured for: ${label}</strong><br><br>
+        This template does not have a file column mapping set up yet.
+        Once a sample file is provided, the mapping can be configured and 
+        auto-fill will work automatically.<br><br>
+        <span style="color:#555;">Please fill this form manually for now.</span>
+      </div>`;
+    document.getElementById('confirmFillBtn').style.display = 'none';
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src; s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  // Close modal on overlay click
+  document.getElementById('autofillModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAutofillModal();
   });
 </script>
 {% endblock %}

@@ -155,7 +155,7 @@
         border-bottom: none;
       }
 
-      /* ✅ PHASE 1: Status Badge Styles */
+      /* âœ… PHASE 1: Status Badge Styles */
       .status-badge {
         display: inline-block;
         padding: 4px 12px;
@@ -179,7 +179,7 @@
         color: #6c757d;
       }
 
-      /* ✅ PHASE 1: Duration Highlight */
+      /* âœ… PHASE 1: Duration Highlight */
       .duration-highlight {
         background: #e7f3ff;
         border-left: 4px solid #006837;
@@ -341,7 +341,7 @@
               else 'N/A' }} {% else %} N/A {% endif %}
             </td>
           </tr>
-          <!-- ✅ PHASE 1: NEW - Date Ended Row -->
+          <!-- âœ… PHASE 1: NEW - Date Ended Row -->
           <tr>
             <td><strong>Date Ended</strong></td>
             <td>
@@ -354,7 +354,7 @@
               {% endif %}
             </td>
           </tr>
-          <!-- ✅ PHASE 1: NEW - Project Duration (if both dates exist) -->
+          <!-- âœ… PHASE 1: NEW - Project Duration (if both dates exist) -->
           {% if report.date_started and report.date_ended %}
           <tr>
             <td><strong>Project Duration</strong></td>
@@ -391,5 +391,6 @@
         else 'None reported.' }}
       </div>
     </div>
+    {% include "psr_views/_attachments.html" %}
   </body>
 </html>

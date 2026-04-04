@@ -5,45 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}FCCPC Portal{% endblock %}</title>
 
-    <!-- Favicon -->
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
-    />
+    <link rel="icon" type="image/x-icon"
+          href="{{ url_for('static', filename='images/fccpc-logo.jpg') }}" />
 
     <!-- CSS -->
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/bootstrap-icons.min.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/fonts.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+    <!-- FIX: Load Bootstrap Icons ONCE — removed duplicate CDN link -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 
     {% block extra_css %}{% endblock %}
   </head>
   <body>
     {% if current_user.is_authenticated %}
-    <!-- Top Navigation Bar (Sticky Green Header) -->
+    <!-- Top Navigation Bar -->
     <nav class="top-bar">
       <div class="top-bar-brand">
-        <img
-          src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
-          alt="FCCPC Logo"
-        />
+        <img src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}" alt="FCCPC Logo" />
         <span>FCCPC Portal</span>
       </div>
-
       <div class="top-bar-actions">
         <div class="top-bar-user">
           <i class="bi bi-person-circle"></i>
@@ -57,7 +38,6 @@
 
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
-      <!-- User Info -->
       <div class="sidebar-user">
         <div class="sidebar-user-label">Logged in as</div>
         <div class="sidebar-user-name">{{ current_user.name }}</div>
@@ -80,57 +60,56 @@
       <!-- Main Navigation -->
       <div class="sidebar-section">
         <div class="sidebar-section-title">Main Menu</div>
-
-        <a
-          href="{{ url_for('program_dashboard') }}"
-          class="nav-link {% if request.endpoint == 'program_dashboard' %}active{% endif %}"
-        >
+        <a href="{{ url_for('program_dashboard') }}"
+           class="nav-link {% if request.endpoint == 'program_dashboard' %}active{% endif %}">
           <i class="bi bi-journal-text"></i>
           <span>Program Status (PSR)</span>
         </a>
-
-        <a
-          href="{{ url_for('dashboard') }}"
-          class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
-        >
+        <a href="{{ url_for('dashboard') }}"
+           class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
           <i class="bi bi-graph-up"></i>
           <span>Price Reports</span>
         </a>
-
-        <!-- REMOVED: Complaints menu item - now integrated into PSR dashboard -->
       </div>
 
-      <!-- Admin Section -->
-      {% if current_user.is_admin() or current_user.is_evc() or
-      current_user.is_director() %}
+      <!-- Management Section -->
+      {% if current_user.is_admin() or current_user.is_evc() or current_user.is_director() %}
       <div class="sidebar-section">
         <div class="sidebar-section-title">Management</div>
 
         {% if current_user.is_admin() %}
-        <a
-          href="{{ url_for('admin_dashboard') }}"
-          class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
-        >
+        <a href="{{ url_for('admin_dashboard') }}"
+           class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
           <i class="bi bi-shield-lock"></i>
           <span>Admin Portal</span>
         </a>
-
-        <a
-          href="{{ url_for('audit_logs') }}"
-          class="nav-link {% if request.endpoint == 'audit_logs' %}active{% endif %}"
-        >
+        <!-- FIX: Added Custom Templates link -->
+        <a href="{{ url_for('custom_templates_list') }}"
+           class="nav-link {% if request.endpoint in ['custom_templates_list','custom_template_new','custom_template_edit'] %}active{% endif %}">
+          <i class="bi bi-puzzle"></i>
+          <span>Custom Templates</span>
+        </a>
+        <a href="{{ url_for('audit_logs') }}"
+           class="nav-link {% if request.endpoint == 'audit_logs' %}active{% endif %}">
           <i class="bi bi-clock-history"></i>
           <span>Audit Logs</span>
         </a>
-        {% endif %} {% if current_user.is_evc() %}
-        <a href="#" class="nav-link">
+        {% endif %}
+
+        {% if current_user.is_evc() %}
+        <!-- FIX: Coming Soon styling for placeholder links -->
+        <a href="#" class="nav-link disabled-soon" title="Coming soon">
           <i class="bi bi-speedometer2"></i>
           <span>EVC Dashboard</span>
+          <span class="badge bg-secondary ms-auto" style="font-size:10px; opacity:.7;">Soon</span>
         </a>
-        {% endif %} {% if current_user.is_director() %}
-        <a href="#" class="nav-link">
+        {% endif %}
+
+        {% if current_user.is_director() and not current_user.is_admin() %}
+        <a href="#" class="nav-link disabled-soon" title="Coming soon">
           <i class="bi bi-bar-chart-line"></i>
           <span>Director Analytics</span>
+          <span class="badge bg-secondary ms-auto" style="font-size:10px; opacity:.7;">Soon</span>
         </a>
         {% endif %}
       </div>
@@ -148,48 +127,35 @@
 
     <!-- Main Content -->
     <main class="main-content">
-      <!-- Flash Messages -->
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
       <div class="alerts-container">
         {% for category, message in messages %}
-        <div
-          class="alert alert-{{ category if category != 'error' else 'danger' }}"
-        >
-          <i
-            class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'warning' %}exclamation-triangle{% elif category == 'danger' or category == 'error' %}x-circle{% else %}info-circle{% endif %}"
-          ></i>
+        <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+          <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'warning' %}exclamation-triangle{% elif category == 'danger' or category == 'error' %}x-circle{% else %}info-circle{% endif %}"></i>
           <div>{{ message }}</div>
         </div>
         {% endfor %}
       </div>
-      {% endif %} {% endwith %}
+      {% endif %}
+      {% endwith %}
 
-      <!-- Page Content -->
       {% block content %}{% endblock %}
     </main>
 
-    <!-- JavaScript -->
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
     <script>
-      // Mobile sidebar toggle
       function toggleSidebar() {
-        const sidebar = document.getElementById("sidebar");
-        sidebar.classList.toggle("show");
+        document.getElementById("sidebar").classList.toggle("show");
       }
 
-      // Close sidebar when clicking outside on mobile
       document.addEventListener("click", function (event) {
         const sidebar = document.getElementById("sidebar");
-        const toggle = document.querySelector(".mobile-menu-toggle");
-
+        const toggle  = document.querySelector(".mobile-menu-toggle");
         if (window.innerWidth <= 768 && sidebar && toggle) {
-          if (
-            !sidebar.contains(event.target) &&
-            !toggle.contains(event.target)
-          ) {
+          if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
             sidebar.classList.remove("show");
           }
         }
@@ -197,16 +163,22 @@
 
       // Auto-dismiss alerts after 5 seconds
       setTimeout(function () {
-        const alerts = document.querySelectorAll(".alert");
-        alerts.forEach(function (alert) {
+        document.querySelectorAll(".alert").forEach(function (alert) {
           alert.style.transition = "opacity 0.5s";
           alert.style.opacity = "0";
-          setTimeout(function () {
-            alert.remove();
-          }, 500);
+          setTimeout(function () { alert.remove(); }, 500);
         });
       }, 5000);
     </script>
+
+    <style>
+      /* FIX: Coming Soon sidebar links */
+      .nav-link.disabled-soon {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+    </style>
 
     {% block extra_js %}{% endblock %}
   </body>

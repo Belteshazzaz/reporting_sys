@@ -12,7 +12,6 @@
         </div>
 
         <div class="card-body p-4">
-          <!-- Registration restricted notice (if applicable) -->
           {% with messages = get_flashed_messages(with_categories=true) %} {% if
           messages %} {% for category, message in messages %}
           <div
@@ -83,6 +82,72 @@
               >
             </div>
 
+            <!-- Office Type -->
+            <div class="mb-3">
+              <label class="form-label">
+                <i class="bi bi-diagram-3"></i> Office Type
+                <span class="text-danger">*</span>
+              </label>
+              <div class="d-flex gap-3">
+                <div
+                  class="office-type-card selected"
+                  id="card_zonal"
+                  onclick="selectOfficeType('Zonal/State')"
+                >
+                  <input
+                    type="radio"
+                    name="office_type"
+                    value="Zonal/State"
+                    id="ot_zonal"
+                    checked
+                    style="display: none"
+                  />
+                  <div class="office-type-icon">🗺️</div>
+                  <div>
+                    <div class="office-type-label">Zonal / State</div>
+                    <div class="office-type-sub">Field office staff</div>
+                  </div>
+                </div>
+                <div
+                  class="office-type-card"
+                  id="card_hq"
+                  onclick="selectOfficeType('HQ')"
+                >
+                  <input
+                    type="radio"
+                    name="office_type"
+                    value="HQ"
+                    id="ot_hq"
+                    style="display: none"
+                  />
+                  <div class="office-type-icon">🏛️</div>
+                  <div>
+                    <div class="office-type-label">HQ — Abuja</div>
+                    <div class="office-type-sub">Headquarters staff</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Department (HQ only) -->
+            <div class="mb-3" id="dept_section" style="display: none">
+              <label for="dept_select" class="form-label">
+                <i class="bi bi-briefcase"></i> Department
+                <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="dept_select" name="department">
+                <option value="" disabled selected>
+                  -- Select Department --
+                </option>
+                {% for dept in departments %}
+                <option value="{{ dept }}">{{ dept }}</option>
+                {% endfor %}
+              </select>
+              <small class="text-muted"
+                >Determines which report templates you can access.</small
+              >
+            </div>
+
             <!-- Email -->
             <div class="mb-3">
               <label for="email" class="form-label">
@@ -137,7 +202,7 @@
               />
             </div>
 
-            <!-- Submit Button -->
+            <!-- Submit -->
             <div class="d-grid">
               <button type="submit" class="btn btn-primary btn-lg">
                 <i class="bi bi-person-check"></i> Create Account
@@ -156,7 +221,6 @@
         </div>
       </div>
 
-      <!-- Info Notice -->
       <div class="alert alert-info mt-3" role="alert">
         <i class="bi bi-info-circle-fill"></i>
         <strong>Note:</strong> Registration is restricted. Contact your
@@ -167,23 +231,19 @@
 </div>
 
 <style>
-  /* Additional styling for register page */
   .card {
     border-radius: 15px;
     overflow: hidden;
   }
-
   .card-header {
     padding: 1.5rem;
     border-bottom: 3px solid rgba(255, 255, 255, 0.2);
   }
-
   .form-label {
     font-weight: 600;
     color: #2c3e50;
     margin-bottom: 0.5rem;
   }
-
   .form-control,
   .form-select {
     border-radius: 8px;
@@ -191,13 +251,11 @@
     padding: 0.75rem;
     transition: all 0.3s ease;
   }
-
   .form-control:focus,
   .form-select:focus {
     border-color: #0d6efd;
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
   }
-
   .btn-primary {
     background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
     border: none;
@@ -206,74 +264,121 @@
     font-weight: 600;
     transition: all 0.3s ease;
   }
-
   .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
   }
-
   .text-danger {
     color: #dc3545 !important;
   }
-
   small.text-muted {
     font-size: 0.875rem;
     color: #6c757d;
   }
-
   .card-footer {
     padding: 1rem;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
-
   .alert-info {
     border-radius: 10px;
     border-left: 4px solid #0dcaf0;
   }
+
+  /* Office type cards */
+  .office-type-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 2px solid #dce4ec;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+  }
+  .office-type-card:hover {
+    border-color: #0d6efd;
+    background: #f0f5ff;
+  }
+  .office-type-card.selected {
+    border-color: #0d6efd;
+    background: #f0f5ff;
+  }
+  .office-type-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .office-type-label {
+    font-weight: 700;
+    font-size: 13px;
+    color: #2c3e50;
+  }
+  .office-type-sub {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 1px;
+  }
 </style>
 
 <script>
-  // Client-side form validation
+  function selectOfficeType(type) {
+    document
+      .getElementById("card_hq")
+      .classList.toggle("selected", type === "HQ");
+    document
+      .getElementById("card_zonal")
+      .classList.toggle("selected", type === "Zonal/State");
+    document.getElementById("ot_hq").checked = type === "HQ";
+    document.getElementById("ot_zonal").checked = type === "Zonal/State";
+    const deptSection = document.getElementById("dept_section");
+    const deptSelect = document.getElementById("dept_select");
+    if (type === "HQ") {
+      deptSection.style.display = "block";
+      deptSelect.required = true;
+    } else {
+      deptSection.style.display = "none";
+      deptSelect.required = false;
+      deptSelect.value = "";
+    }
+  }
+
   document
     .getElementById("registerForm")
     .addEventListener("submit", function (e) {
       const password = document.getElementById("password").value;
       const confirmPassword = document.getElementById("confirm_password").value;
-
-      // Check if passwords match
       if (password !== confirmPassword) {
         e.preventDefault();
         alert("Passwords do not match! Please check and try again.");
         document.getElementById("confirm_password").focus();
         return false;
       }
-
-      // Check password length
       if (password.length < 8) {
         e.preventDefault();
         alert("Password must be at least 8 characters long!");
         document.getElementById("password").focus();
         return false;
       }
-
+      if (
+        document.getElementById("ot_hq").checked &&
+        !document.getElementById("dept_select").value
+      ) {
+        e.preventDefault();
+        alert("Please select your department.");
+        document.getElementById("dept_select").focus();
+        return false;
+      }
       return true;
     });
 
-  // Real-time password match indicator
   document
     .getElementById("confirm_password")
     .addEventListener("input", function () {
       const password = document.getElementById("password").value;
-      const confirmPassword = this.value;
-
-      if (confirmPassword.length > 0) {
-        if (password === confirmPassword) {
-          this.classList.remove("is-invalid");
-          this.classList.add("is-valid");
-        } else {
-          this.classList.remove("is-valid");
-          this.classList.add("is-invalid");
-        }
+      if (this.value.length > 0) {
+        this.classList.toggle("is-valid", password === this.value);
+        this.classList.toggle("is-invalid", password !== this.value);
       } else {
         this.classList.remove("is-valid", "is-invalid");
       }

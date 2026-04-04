@@ -323,21 +323,28 @@
       <table class="data-table">
         <thead>
           <tr>
-            {% for field in config.fields %}
+            <th style="width: 48px; text-align: center">S/N</th>
+            {% for field in config.fields %} {% if field.key != 'sn' %}
             <th>{{ field.label }}</th>
-            {% endfor %}
+            {% endif %} {% endfor %}
           </tr>
         </thead>
         <tbody>
           {% for row in rows %}
           <tr>
-            {% for field in config.fields %}
+            <td style="text-align: center; color: #6c757d; font-weight: 600">
+              {{ loop.index }}
+            </td>
+            {% for field in config.fields %} {% if field.key != 'sn' %}
             <td>{{ row.get(field.key, '-') }}</td>
-            {% endfor %}
+            {% endif %} {% endfor %}
           </tr>
           {% else %}
           <tr>
-            <td colspan="{{ config.fields|length }}" class="empty-state">
+            <td
+              colspan="{{ (config.fields | selectattr('key', 'ne', 'sn') | list | length) + 1 }}"
+              class="empty-state"
+            >
               No records found for this report.
             </td>
           </tr>

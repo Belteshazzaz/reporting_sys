@@ -295,7 +295,7 @@
             <td>{{ report.action_taken or 'N/A' }}</td>
           </tr>
           <tr>
-            <td><strong>Status (Date & Time)</strong></td>
+            <td><strong>Status of Complaint</strong></td>
             <td>{{ report.status_of_complaint or 'N/A' }}</td>
           </tr>
           <tr>
@@ -309,5 +309,6 @@
         </tbody>
       </table>
     </div>
+    {% include "psr_views/_attachments.html" %}
   </body>
 </html>

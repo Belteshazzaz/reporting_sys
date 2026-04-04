@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Edit User — {{ user.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h4 class="mb-0"><i class="bi bi-person-gear"></i> Edit User</h4>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Back
+        </a>
+      </div>
+
+      <!-- User identity strip -->
+      <div class="alert alert-light border d-flex align-items-center gap-3 mb-4">
+        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+             style="width:46px;height:46px;font-size:18px;flex-shrink:0;">
+          {{ user.name[0].upper() }}
+        </div>
+        <div>
+          <div class="fw-bold">{{ user.name }}</div>
+          <div class="text-muted small">{{ user.email }}</div>
+        </div>
+        <div class="ms-auto text-end">
+          {% if user.office_type == 'HQ' %}
+          <span class="badge bg-primary">🏛️ HQ</span>
+          {% else %}
+          <span class="badge bg-warning text-dark">🗺️ Zonal/State</span>
+          {% endif %}
+          {% if user.department %}
+          <br><span class="badge bg-success mt-1">{{ user.department }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <i class="bi bi-pencil-square"></i> Update Profile
+        </div>
+        <div class="card-body p-4">
+          <form method="POST">
+
+            <!-- Office Type -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-diagram-3"></i> Office Type
+              </label>
+              <div class="d-flex gap-3">
+                <div class="office-type-card {% if user.office_type == 'HQ' %}selected{% endif %}"
+                     id="card_hq" onclick="selectOfficeType('HQ')">
+                  <input type="radio" name="office_type" value="HQ" id="ot_hq"
+                         style="display:none" {% if user.office_type == 'HQ' %}checked{% endif %} />
+                  <div class="office-type-icon">🏛️</div>
+                  <div>
+                    <div class="office-type-label">HQ — Abuja</div>
+                    <div class="office-type-sub">Headquarters staff</div>
+                  </div>
+                </div>
+                <div class="office-type-card {% if user.office_type != 'HQ' %}selected{% endif %}"
+                     id="card_zonal" onclick="selectOfficeType('Zonal/State')">
+                  <input type="radio" name="office_type" value="Zonal/State" id="ot_zonal"
+                         style="display:none" {% if user.office_type != 'HQ' %}checked{% endif %} />
+                  <div class="office-type-icon">🗺️</div>
+                  <div>
+                    <div class="office-type-label">Zonal / State</div>
+                    <div class="office-type-sub">Field office staff</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Department (HQ only) -->
+            <div class="mb-3" id="dept_section"
+                 style="display:{% if user.office_type == 'HQ' %}block{% else %}none{% endif %}">
+              <label for="dept_select" class="form-label fw-semibold">
+                <i class="bi bi-briefcase"></i> Department
+              </label>
+              <select class="form-select" id="dept_select" name="department"
+                      {% if user.office_type == 'HQ' %}required{% endif %}>
+                <option value="" disabled {% if not user.department %}selected{% endif %}>
+                  -- Select Department --
+                </option>
+                {% for dept in departments %}
+                <option value="{{ dept }}" {% if user.department == dept %}selected{% endif %}>
+                  {{ dept }}
+                </option>
+                {% endfor %}
+              </select>
+              <small class="text-muted">Determines which report templates this user can access.</small>
+            </div>
+
+            <hr />
+
+            <!-- Role -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-shield"></i> Role
+              </label>
+              {% if user.id == current_user.id %}
+              <div class="alert alert-warning py-2 small">
+                ⚠ You cannot change your own role.
+              </div>
+              {% endif %}
+              <div class="d-flex gap-2 flex-wrap" id="roleGrid"
+                   style="{% if user.id == current_user.id %}opacity:0.5;pointer-events:none{% endif %}">
+                {% for val, label, color in [(1,'Agent','secondary'),(2,'Supervisor','info'),(3,'Director','primary'),(4,'EVC','dark'),(9,'Admin','success')] %}
+                <label class="role-card {% if user.role == val %}selected{% endif %}"
+                       onclick="selectRole(this)">
+                  <input type="radio" name="role" value="{{ val }}"
+                         style="display:none" {% if user.role == val %}checked{% endif %} />
+                  <span class="badge bg-{{ color }} d-block mb-1" style="font-size:13px;">{{ label }}</span>
+                  <small class="text-muted">Level {{ val }}</small>
+                </label>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-circle"></i> Save Changes
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .office-type-card {
+    flex: 1; display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border: 2px solid #dce4ec;
+    border-radius: 10px; cursor: pointer; transition: all 0.2s; background: white;
+  }
+  .office-type-card:hover  { border-color: #0d6efd; background: #f0f5ff; }
+  .office-type-card.selected { border-color: #0d6efd; background: #f0f5ff; }
+  .office-type-icon  { font-size: 22px; flex-shrink: 0; }
+  .office-type-label { font-weight: 700; font-size: 13px; color: #2c3e50; }
+  .office-type-sub   { font-size: 11px; color: #6c757d; margin-top: 1px; }
+
+  .role-card {
+    border: 2px solid #dce4ec; border-radius: 10px;
+    padding: 10px 14px; cursor: pointer; text-align: center;
+    transition: all 0.2s; background: white; min-width: 80px;
+  }
+  .role-card:hover   { border-color: #0d6efd; background: #f0f5ff; }
+  .role-card.selected { border-color: #0d6efd; background: #f0f5ff; }
+</style>
+
+<script>
+  function selectOfficeType(type) {
+    document.getElementById('card_hq').classList.toggle('selected', type === 'HQ');
+    document.getElementById('card_zonal').classList.toggle('selected', type !== 'HQ');
+    document.getElementById('ot_hq').checked    = (type === 'HQ');
+    document.getElementById('ot_zonal').checked = (type !== 'HQ');
+    const deptSection = document.getElementById('dept_section');
+    const deptSelect  = document.getElementById('dept_select');
+    if (type === 'HQ') {
+      deptSection.style.display = 'block';
+      deptSelect.required = true;
+    } else {
+      deptSection.style.display = 'none';
+      deptSelect.required = false;
+      deptSelect.value = '';
+    }
+  }
+
+  function selectRole(card) {
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  }
+</script>
+{% endblock %}

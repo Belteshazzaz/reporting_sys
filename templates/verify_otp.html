@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>FCCPC Portal | Verify Identity</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+
+  <body class="bg-light d-flex align-items-center justify-content-center" style="min-height:100vh">
+    <div class="card shadow p-4" style="width:100%; max-width:420px; border-radius:12px;">
+
+      <div class="text-center mb-3">
+        <img src="{{ url_for('static', filename='images/fccpc-logo.jpg') }}"
+             alt="FCCPC Logo" height="70" />
+      </div>
+
+      <div class="text-center mb-4">
+        <div style="font-size:40px;">🔐</div>
+        <h4 class="mt-2 mb-1 fw-bold">Two-Step Verification</h4>
+        <p class="text-muted small mb-0">FCCPC Price Surveillance &amp; Reporting System</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <p class="text-muted mb-4" style="font-size:14px; line-height:1.6;">
+        An 8-digit verification code has been sent to
+        <strong>{{ masked_email }}</strong>.
+        Enter it below to complete your login.
+      </p>
+
+      <form method="POST" id="otpForm">
+        <div class="mb-3">
+          <label for="otp" class="form-label fw-semibold">
+            Verification Code <span class="text-danger">*</span>
+          </label>
+          <input type="text"
+                 class="form-control form-control-lg text-center fw-bold"
+                 id="otp"
+                 name="otp"
+                 maxlength="8"
+                 inputmode="numeric"
+                 pattern="[0-9]{8}"
+                 autocomplete="one-time-code"
+                 placeholder="_ _ _ _ _ _ _ _"
+                 autofocus
+                 required
+                 style="font-size:26px; letter-spacing:8px; border-radius:8px;" />
+          <small class="text-muted">Code expires in {{ expiry_minutes }} minutes.</small>
+        </div>
+
+        <div class="d-grid mt-3">
+          <button type="submit" class="btn btn-primary btn-lg fw-bold">
+            <i class="bi bi-shield-check"></i> Verify &amp; Sign In
+          </button>
+        </div>
+      </form>
+
+      <hr class="my-3" />
+
+      <div class="text-center">
+        <small class="text-muted d-block mb-2">Didn't receive the code?</small>
+        <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i> Back to Login
+        </a>
+      </div>
+
+      <div class="alert alert-warning mt-3 small" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>Security Notice:</strong> Never share your verification code with anyone.
+      </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+      const otpInput = document.getElementById('otp');
+
+      // Only allow digits
+      otpInput.addEventListener('input', function () {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8);
+        // Auto-submit when 8 digits entered
+        if (this.value.length === 8) {
+          document.getElementById('otpForm').submit();
+        }
+      });
+    </script>
+  </body>
+</html>
