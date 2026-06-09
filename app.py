@@ -4,7 +4,7 @@
 # 2. Added complaints analytics route with counts
 # 3. Updated submission logic to capture date_ended
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json, os
 import pandas as pd
 import plotly.graph_objects as go
@@ -25,9 +25,6 @@ from dotenv import load_dotenv
 from io import StringIO, BytesIO
 import csv
 from collections import Counter
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from file_upload_utils import (
     save_file, delete_file, get_file_path,
     format_file_size, get_file_icon,
@@ -97,7 +94,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 
 # MFA OTP expiry in minutes
-OTP_EXPIRY_MINUTES = 10
 
 # Security Headers
 @app.after_request
@@ -209,7 +205,7 @@ class ProgramReport(db.Model):
     status_percentage = db.Column(db.Integer, default=0)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     agent = db.relationship('User', backref=db.backref('program_reports', lazy=True))
-    targets_report = db.relationship('TargetsAchievedReport', uselist=False, backref='base_report')
+    targets_report = db.relationship('TargetsAchievedReport', uselist=False, backref='base_report', cascade='all, delete-orphan')
     psr_rows = db.relationship("PSRRow", backref="program_report", cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -404,7 +400,7 @@ login_manager.login_message = 'Please log in to access this page.'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -570,51 +566,8 @@ def _save_attachments(req, report_id=None, complaint_id=None):
     return saved
 
 
-def generate_otp():
-    """Generate a cryptographically secure 8-digit OTP."""
-    return ''.join(secrets.choice(string.digits) for _ in range(8))
 
 
-def send_otp_email(user_email, user_name, otp):
-    """Send OTP via M365 SMTP. Returns (success, error_message)."""
-    smtp_server   = os.environ.get('MAIL_SERVER', 'smtp.office365.com')
-    smtp_port     = int(os.environ.get('MAIL_PORT', 587))
-    smtp_user     = os.environ.get('MAIL_USERNAME', '')
-    smtp_password = os.environ.get('MAIL_PASSWORD', '')
-    sender_email  = os.environ.get('MAIL_DEFAULT_SENDER', smtp_user)
-
-    if not smtp_user or not smtp_password:
-        # Dev fallback — print to console
-        print(f"\n[MFA DEV] OTP for {user_email}: {otp}\n")
-        return True, None
-
-    subject = "FCCPC PSR — Your Login Verification Code"
-    body = f"""Dear {user_name},
-
-Your 8-digit verification code for the FCCPC Price Surveillance & Reporting System is:
-
-    {otp}
-
-This code expires in {OTP_EXPIRY_MINUTES} minutes.
-
-If you did not attempt to log in, please contact your administrator immediately.
-
-— FCCPC PSR System
-"""
-    try:
-        msg = MIMEMultipart()
-        msg['From']    = sender_email
-        msg['To']      = user_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(smtp_user, smtp_password)
-            server.sendmail(sender_email, user_email, msg.as_string())
-        return True, None
-    except Exception as e:
-        return False, str(e)
 
 # ==================== DECORATORS ====================
 
@@ -706,76 +659,15 @@ def login():
                 flash("Your account has been suspended. Contact administrator.", "danger")
                 return redirect(url_for("login"))
 
-            # MFA: generate 8-digit OTP, store in session, send email
-            otp    = generate_otp()
-            expiry = datetime.utcnow() + timedelta(minutes=OTP_EXPIRY_MINUTES)
-
-            session['mfa_user_id']  = user.id
-            session['mfa_otp']      = otp
-            session['mfa_expiry']   = expiry.isoformat()
-            session['mfa_attempts'] = 0
-
-            success, error = send_otp_email(user.email, user.name, otp)
-            if not success:
-                flash(f'Could not send verification email: {error}. Contact administrator.', 'danger')
-                session.clear()
-                return redirect(url_for('login'))
-
-            flash(f'A verification code has been sent to {user.email}.', 'info')
-            return redirect(url_for('verify_otp'))
+            login_user(user)
+            log_action(action="Login", details=f"{user.email} logged in")
+            flash('Logged in successfully!', 'success')
+            return redirect(url_for('program_dashboard'))
         else:
             flash('Invalid email or password.', 'danger')
 
     return render_template('login.html')
 
-
-@app.route('/verify-otp', methods=['GET', 'POST'])
-@limiter.limit("10 per minute")
-def verify_otp():
-    if 'mfa_user_id' not in session:
-        return redirect(url_for('login'))
-
-    user = User.query.get(session['mfa_user_id'])
-    if not user:
-        session.clear()
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        entered_otp = request.form.get('otp', '').strip()
-
-        # Check expiry
-        expiry = datetime.fromisoformat(session.get('mfa_expiry', '2000-01-01'))
-        if datetime.utcnow() > expiry:
-            session.clear()
-            flash('Verification code expired. Please log in again.', 'warning')
-            return redirect(url_for('login'))
-
-        # Max 5 attempts
-        attempts = session.get('mfa_attempts', 0)
-        if attempts >= 5:
-            session.clear()
-            flash('Too many incorrect attempts. Please log in again.', 'danger')
-            log_action("MFA Failed", target_user=user,
-                       details=f"{user.email} exceeded OTP attempts")
-            return redirect(url_for('login'))
-
-        if secrets.compare_digest(entered_otp, session.get('mfa_otp', '')):
-            session.pop('mfa_user_id',  None)
-            session.pop('mfa_otp',      None)
-            session.pop('mfa_expiry',   None)
-            session.pop('mfa_attempts', None)
-            login_user(user)
-            log_action(action="Login", details=f"{user.email} logged in (MFA passed)")
-            flash('Logged in successfully!', 'success')
-            return redirect(url_for('program_dashboard'))
-        else:
-            session['mfa_attempts'] = attempts + 1
-            remaining = 5 - session['mfa_attempts']
-            flash(f'Incorrect code. {remaining} attempt(s) remaining.', 'danger')
-
-    masked_email = user.email[:3] + '***@' + user.email.split('@')[1]
-    return render_template('verify_otp.html', masked_email=masked_email,
-                           expiry_minutes=OTP_EXPIRY_MINUTES)
 
 @app.route('/logout')
 @login_required
@@ -824,7 +716,7 @@ def admin_dashboard():
 @admin_required
 def change_password(user_id):
     """Admin can change any user's password"""
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id) or abort(404)
     
     if request.method == 'POST':
         # If admin is changing their own password, require old password
@@ -890,7 +782,7 @@ def change_password(user_id):
 @admin_required
 def reset_password(user_id):
     """Reset user password"""
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id) or abort(404)
     
     characters = string.ascii_letters + string.digits
     temp_password = ''.join(secrets.choice(characters) for i in range(12))
@@ -907,7 +799,7 @@ def reset_password(user_id):
 @admin_required
 def elevate_user(user_id, new_role):
     """Change user role"""
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id) or abort(404)
     
     if user.id == current_user.id:
         flash("You cannot change your own role.", "danger")
@@ -934,7 +826,7 @@ def elevate_user(user_id, new_role):
 @admin_required
 def edit_user(user_id):
     """Admin edits a user office type, department, and role."""
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id) or abort(404)
 
     if request.method == 'POST':
         office_type = request.form.get('office_type', 'Zonal/State').strip()
@@ -970,7 +862,7 @@ def edit_user(user_id):
 @admin_required
 def toggle_user_status(user_id):
     """Enable/disable user account"""
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id) or abort(404)
     user.is_enabled = not user.is_enabled
     db.session.commit()
     
@@ -1789,7 +1681,7 @@ def custom_template_new():
 def custom_template_edit(template_id):
     if not current_user.is_admin():
         abort(403)
-    ct = CustomTemplate.query.get_or_404(template_id)
+    ct = db.session.get(CustomTemplate, template_id) or abort(404)
 
     if request.method == 'POST':
         data = request.get_json()
@@ -1866,7 +1758,7 @@ def custom_template_edit(template_id):
 def custom_template_delete(template_id):
     if not current_user.is_admin():
         abort(403)
-    ct = CustomTemplate.query.get_or_404(template_id)
+    ct = db.session.get(CustomTemplate, template_id) or abort(404)
     report_count = ProgramReport.query.filter_by(report_type=ct.slug).count()
 
     if report_count > 0:
@@ -1891,7 +1783,7 @@ def custom_template_delete(template_id):
 def custom_template_toggle(template_id):
     if not current_user.is_admin():
         abort(403)
-    ct = CustomTemplate.query.get_or_404(template_id)
+    ct = db.session.get(CustomTemplate, template_id) or abort(404)
     ct.is_active = not ct.is_active
     db.session.commit()
     state = 'activated' if ct.is_active else 'deactivated'
@@ -1906,6 +1798,8 @@ def custom_template_toggle(template_id):
 def parse_autofill_upload():
     """
     Server-side parser for .docx files uploaded for auto-fill.
+    Handles table-based documents only.
+    Narrative/prose documents are detected and a helpful message is returned.
     Returns JSON: { headers: [...], rows: [[...], [...]] }
     """
     from flask import jsonify
@@ -1921,45 +1815,33 @@ def parse_autofill_upload():
         import docx as python_docx
         doc = python_docx.Document(file)
 
-        # Look for the first table with at least 2 rows
-        table = None
-        for t in doc.tables:
-            if len(t.rows) >= 2:
-                table = t
-                break
+        # ── Table-based document ──────────────────────────────────────
+        table = next((t for t in doc.tables if len(t.rows) >= 2), None)
+        if table is not None:
+            headers = []
+            for cell in table.rows[0].cells:
+                text = cell.text.strip()
+                headers.append(text if text not in headers else '')
+            rows = []
+            for row in table.rows[1:]:
+                cells = [cell.text.strip() for cell in row.cells]
+                if any(c for c in cells):
+                    rows.append(cells[:len(headers)])
+            if rows:
+                return jsonify({'headers': headers, 'rows': rows})
 
-        if table is None:
+        # ── Narrative/prose document — no table found ─────────────────
+        # Count paragraphs to confirm it has content
+        para_count = sum(1 for p in doc.paragraphs if p.text.strip())
+        if para_count > 0:
             return jsonify({
-                'error': (
-                    'No data table found in this Word document. '
-                    'This document appears to contain narrative text only and '
-                    'cannot be auto-filled. Please fill the form manually.'
-                )
+                'narrative': True,
+                'unsupported': True,
+                'para_count': para_count,
+                'doc_title': doc.paragraphs[0].text.strip() if doc.paragraphs else ''
             }), 200
 
-        # Extract headers from first row (clean bold markers, strip whitespace)
-        headers = []
-        for cell in table.rows[0].cells:
-            text = cell.text.strip()
-            # Remove duplicate merged cell text (Word sometimes duplicates)
-            if text not in headers:
-                headers.append(text)
-            else:
-                headers.append('')  # blank placeholder for merged cols
-
-        # Extract data rows
-        rows = []
-        for row in table.rows[1:]:
-            cells = [cell.text.strip() for cell in row.cells]
-            # Only include rows that have at least one non-empty cell
-            if any(c for c in cells):
-                # Trim to match header count
-                rows.append(cells[:len(headers)])
-
-        if not rows:
-            return jsonify({'error': 'Table found but contains no data rows.'}), 200
-
-        return jsonify({'headers': headers, 'rows': rows})
+        return jsonify({'error': 'Document appears to be empty.'}), 200
 
     except Exception as e:
         return jsonify({'error': f'Could not read Word file: {str(e)}'}), 500
@@ -1971,13 +1853,13 @@ def parse_autofill_upload():
 @login_required
 def download_attachment(attachment_id):
     """Download a file attachment"""
-    attachment = ReportAttachment.query.get_or_404(attachment_id)
+    attachment = db.session.get(ReportAttachment, attachment_id) or abort(404)
 
     # Authorization check
     if attachment.report_id:
-        owner_id = ProgramReport.query.get_or_404(attachment.report_id).user_id
+        owner_id = db.session.get(ProgramReport, attachment.report_id) or abort(404).user_id
     else:
-        owner_id = ConsumerComplaint.query.get_or_404(attachment.complaint_id).user_id
+        owner_id = db.session.get(ConsumerComplaint, attachment.complaint_id) or abort(404).user_id
 
     if not current_user.is_admin() and not current_user.is_supervisor() and current_user.id != owner_id:
         abort(403)
@@ -2000,15 +1882,15 @@ def download_attachment(attachment_id):
 @login_required
 def delete_attachment(attachment_id):
     """Delete a file attachment"""
-    attachment = ReportAttachment.query.get_or_404(attachment_id)
+    attachment = db.session.get(ReportAttachment, attachment_id) or abort(404)
 
     # Determine parent report/complaint and redirect target
     if attachment.report_id:
-        parent = ProgramReport.query.get_or_404(attachment.report_id)
+        parent = db.session.get(ProgramReport, attachment.report_id) or abort(404)
         owner_id = parent.user_id
         redirect_url = url_for('view_program_report', report_id=parent.id)
     else:
-        parent = ConsumerComplaint.query.get_or_404(attachment.complaint_id)
+        parent = db.session.get(ConsumerComplaint, attachment.complaint_id) or abort(404)
         owner_id = parent.user_id
         redirect_url = url_for('view_program_report', report_id=parent.id) + '?type=complaint'
 
@@ -2043,7 +1925,7 @@ def view_program_report(report_id):
     is_complaint = request.args.get('type') == 'complaint'
     
     if is_complaint:
-        complaint = ConsumerComplaint.query.get(report_id)
+        complaint = db.session.get(ConsumerComplaint, report_id)
         
         if not complaint:
             flash('Complaint not found.', 'danger')
@@ -2066,7 +1948,7 @@ def view_program_report(report_id):
         return render_template(template, report=complaint)
     
     else:
-        report = ProgramReport.query.get(report_id)
+        report = db.session.get(ProgramReport, report_id)
         
         if not report:
             flash('Report not found.', 'danger')
@@ -2098,7 +1980,7 @@ def delete_program_report(report_id):
     is_complaint = request.args.get('type') == 'complaint'
     
     if is_complaint:
-        complaint = ConsumerComplaint.query.get(report_id)
+        complaint = db.session.get(ConsumerComplaint, report_id)
         
         if not complaint:
             flash("Complaint not found.", "danger")
@@ -2112,12 +1994,13 @@ def delete_program_report(report_id):
             db.session.delete(complaint)
             db.session.commit()
             flash("Complaint deleted successfully.", "success")
-        except Exception:
+        except Exception as e:
             db.session.rollback()
-            flash("Delete failed.", "danger")
+            app.logger.error(f"Delete complaint {report_id} failed: {str(e)}")
+            flash(f"Delete failed: {str(e)}", "danger")
     
     else:
-        report = ProgramReport.query.get(report_id)
+        report = db.session.get(ProgramReport, report_id)
         
         if not report:
             flash("Report not found.", "danger")
@@ -2131,9 +2014,10 @@ def delete_program_report(report_id):
             db.session.delete(report)
             db.session.commit()
             flash("Report deleted successfully.", "success")
-        except Exception:
+        except Exception as e:
             db.session.rollback()
-            flash("Delete failed.", "danger")
+            app.logger.error(f"Delete report {report_id} failed: {str(e)}")
+            flash(f"Delete failed: {str(e)}", "danger")
     
     return redirect(url_for('program_dashboard'))
 
@@ -2182,7 +2066,7 @@ def export_psr_data():
 @login_required
 def export_single_psr(report_id):
     """Export single PSR report to CSV"""
-    report = ProgramReport.query.get_or_404(report_id)
+    report = db.session.get(ProgramReport, report_id) or abort(404)
     
     if not current_user.is_admin() and report.user_id != current_user.id:
         abort(403)

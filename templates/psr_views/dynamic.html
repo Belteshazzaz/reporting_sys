@@ -176,6 +176,59 @@
         font-style: italic;
       }
 
+      /* ── Narrative report layout ── */
+      .narrative-entry {
+        padding: 24px 28px;
+        border-bottom: 2px solid #e9ecef;
+      }
+      .narrative-entry:last-child { border-bottom: none; }
+
+      .narrative-entry-number {
+        font-size: 12px;
+        font-weight: 800;
+        color: #006837;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .narrative-section { margin-bottom: 20px; }
+      .narrative-section:last-child { margin-bottom: 0; }
+
+      .narrative-section-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: white;
+        background: #006837;
+        padding: 5px 14px;
+        border-radius: 4px 4px 0 0;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      .narrative-section-content {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 4px 4px 4px;
+        padding: 14px 16px;
+        font-size: 14px;
+        line-height: 1.8;
+        color: #212529;
+        white-space: pre-wrap;
+        min-height: 40px;
+      }
+
+      @media print {
+        .narrative-section-label {
+          background: #006837 !important;
+          -webkit-print-color-adjust: exact;
+        }
+      }
+
       /* Back Link */
       .back-link {
         display: inline-block;
@@ -319,38 +372,69 @@
       <div class="record-count">📊 Total Records: {{ rows|length }}</div>
       {% endif %}
 
-      <!-- Data Table -->
+      <!-- Smart Renderer: narrative card layout OR data table -->
+      {% set non_sn_fields = config.fields | selectattr('key', 'ne', 'sn') | list %}
+      {% set textarea_fields = non_sn_fields | selectattr('type', 'equalto', 'textarea') | list %}
+      {% set is_narrative = textarea_fields | length == non_sn_fields | length %}
+
+      {% if is_narrative %}
+      <!-- ── Narrative / Prose Report Layout ── -->
+      {% for row in rows %}
+      <div class="narrative-entry">
+        {% if rows | length > 1 %}
+        <div class="narrative-entry-number">Entry {{ loop.index }}</div>
+        {% endif %}
+        {% for field in config.fields %}
+        {% if field.key != 'sn' %}
+        <div class="narrative-section">
+          <div class="narrative-section-label">{{ field.label }}</div>
+          <div class="narrative-section-content">{{ row.get(field.key, '') or '—' }}</div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="narrative-entry" style="text-align:center; color:#6c757d; padding:40px;">
+        No records found for this report.
+      </div>
+      {% endfor %}
+
+      {% else %}
+      <!-- ── Tabular Data Layout ── -->
       <table class="data-table">
         <thead>
           <tr>
-            <th style="width: 48px; text-align: center">S/N</th>
-            {% for field in config.fields %} {% if field.key != 'sn' %}
+            <th style="width:48px; text-align:center;">S/N</th>
+            {% for field in non_sn_fields %}
             <th>{{ field.label }}</th>
-            {% endif %} {% endfor %}
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
           {% for row in rows %}
           <tr>
-            <td style="text-align: center; color: #6c757d; font-weight: 600">
-              {{ loop.index }}
+            <td style="text-align:center; color:#6c757d; font-weight:600;">{{ loop.index }}</td>
+            {% for field in non_sn_fields %}
+            <td>
+              {% set val = row.get(field.key, '-') %}
+              {% if field.type == 'textarea' %}
+              <div style="white-space:pre-wrap; line-height:1.6; min-width:200px;">{{ val }}</div>
+              {% else %}
+              {{ val }}
+              {% endif %}
             </td>
-            {% for field in config.fields %} {% if field.key != 'sn' %}
-            <td>{{ row.get(field.key, '-') }}</td>
-            {% endif %} {% endfor %}
+            {% endfor %}
           </tr>
           {% else %}
           <tr>
-            <td
-              colspan="{{ (config.fields | selectattr('key', 'ne', 'sn') | list | length) + 1 }}"
-              class="empty-state"
-            >
+            <td colspan="{{ non_sn_fields | length + 1 }}" class="empty-state">
               No records found for this report.
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+      {% endif %}
 
       <a class="back-link" href="{{ url_for('program_dashboard') }}">
         ← Back to Dashboard
